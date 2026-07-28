@@ -2,8 +2,8 @@
 // تنظیمات Supabase — این دو مقدار رو از Supabase Dashboard بردار:
 // Project Settings > API > Project URL  و  anon public key
 // ============================================================
-const SUPABASE_URL = "PASTE_YOUR_SUPABASE_URL_HERE";
-const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY_HERE";
+const SUPABASE_URL = "https://qkulxfjjnbyrllurujct.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrdWx4ZmpqbmJ5cmxsdXJ1amN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyMjM5ODksImV4cCI6MjEwMDc5OTk4OX0.uB3frb8Myhl9di8UDEatU8BL-QxiOX3kNr-C5n8te04";
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 

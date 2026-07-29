@@ -2,10 +2,31 @@
 // تنظیمات Supabase — این دو مقدار رو از Supabase Dashboard بردار:
 // Project Settings > API > Project URL  و  anon public key
 // ============================================================
-const SUPABASE_URL = "https://qkulxfjjnbyrllurujct.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrdWx4ZmpqbmJ5cmxsdXJ1amN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyMjM5ODksImV4cCI6MjEwMDc5OTk4OX0.uB3frb8Myhl9di8UDEatU8BL-QxiOX3kNr-C5n8te04";
+const SUPABASE_URL = "PASTE_YOUR_SUPABASE_URL_HERE";
+const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY_HERE";
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let supabaseClient;
+try {
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} catch (e) {
+  console.error('اتصال به Supabase برقرار نشد (احتمالا CDN لود نشده):', e);
+  // یک نسخه جایگزین که همیشه خطای قابل کنترل برمی‌گردونه، تا بقیه سایت (خانه/پروفایل) کار کنه
+  supabaseClient = {
+    from() {
+      const chain = {
+        select: () => chain, eq: () => chain, order: () => chain, limit: () => chain,
+        insert: () => chain, single: () => chain,
+        then: (resolve) => resolve({ data: null, error: { message: 'no-connection' } })
+      };
+      return chain;
+    },
+    auth: {
+      getSession: async () => ({ data: { session: null } }),
+      signInWithPassword: async () => ({ error: { message: 'no-connection' } }),
+      signOut: async () => {}
+    }
+  };
+}
 
 // شناسه ناشناس این مرورگر/گوشی — برای اینکه مشتری بدون لاگین بتونه سفارش‌های خودش رو ببینه
 function getDeviceId() {
@@ -15,6 +36,18 @@ function getDeviceId() {
     localStorage.setItem('deer_device_id', id);
   }
   return id;
+}
+
+// پروفایل مشتری (اسم و شماره) در localStorage
+function getCustomerProfile() {
+  try { return JSON.parse(localStorage.getItem('ketab_customer')); }
+  catch (e) { return null; }
+}
+function setCustomerProfile(profile) {
+  localStorage.setItem('ketab_customer', JSON.stringify(profile));
+}
+function clearCustomerProfile() {
+  localStorage.removeItem('ketab_customer');
 }
 
 // سبد خرید ساده در localStorage

@@ -3,100 +3,68 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#20140e">
+<meta name="theme-color" content="#4D2308">
 <title>پنل مدیریت — کافه کتاب</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
+<script>
+  tailwind.config = {
+    theme: { extend: { colors: {
+      primary: "#8A9992", "on-primary": "#22190F",
+      secondary: "#55443A", background: "#4D2308",
+      "on-surface-variant": "#CBB9A9"
+    } } }
+  }
+</script>
 <style>
-  :root{
-    --ink:#20140e; --panel:#2a1c14; --panel-2:#33241a; --line:rgba(208,141,54,.2);
-    --gold:#d08d36; --gold-dark:#b87020; --muted:#a89484; --green:#2dc653; --red:#e2554f;
-  }
-  *{box-sizing:border-box; margin:0; padding:0;}
-  body{
-    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Roboto, Arial, sans-serif;
-    background:var(--ink); color:#fff; min-height:100vh;
-  }
-  .wrap{max-width:640px; margin:0 auto; padding:20px 16px 60px;}
-
-  /* login */
-  .login-box{
-    max-width:340px; margin:18vh auto 0; background:var(--panel); border:1px solid var(--line);
-    border-radius:22px; padding:26px 22px; text-align:center;
-  }
-  .login-box h1{font-size:16px; margin-bottom:4px;}
-  .login-box p{font-size:12px; color:var(--muted); margin-bottom:18px;}
-  .login-box input{
-    width:100%; padding:12px 14px; margin-bottom:10px; border-radius:12px; border:1px solid var(--line);
-    background:var(--panel-2); color:#fff; font-size:13px; font-family:inherit;
-  }
-  .login-box button{
-    width:100%; padding:12px; border:none; border-radius:12px; background:var(--gold); color:#20140e;
-    font-weight:900; font-size:13.5px; cursor:pointer; margin-top:6px;
-  }
-  .login-err{color:var(--red); font-size:11.5px; margin-top:8px; min-height:14px;}
-
-  /* dashboard */
-  .top{display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;}
-  .top h1{font-size:16px;}
-  .logout{font-size:11.5px; color:var(--muted); background:none; border:none; text-decoration:underline; cursor:pointer;}
-
-  .stats-row{display:flex; gap:10px; margin-bottom:20px;}
-  .stat{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px; text-align:center;}
-  .stat-num{font-size:19px; font-weight:900; color:var(--gold);}
-  .stat-lbl{font-size:10.5px; color:var(--muted); margin-top:3px;}
-
-  .tabs{display:flex; gap:8px; margin-bottom:14px; overflow-x:auto;}
-  .tab{padding:8px 14px; border-radius:999px; background:var(--panel); border:1px solid var(--line); font-size:12px; font-weight:800; color:var(--muted); cursor:pointer; white-space:nowrap;}
-  .tab.active{background:var(--gold); color:#20140e; border-color:var(--gold);}
-
-  .order-card{background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:14px; margin-bottom:12px;}
-  .order-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
-  .order-id{font-size:13px; font-weight:900;}
-  .order-time{font-size:11px; color:var(--muted);}
-  .order-items{font-size:12.5px; color:#e8ded3; line-height:1.85; margin-bottom:6px;}
-  .order-note{font-size:11.5px; color:var(--gold); margin-bottom:10px;}
-  .order-bottom{display:flex; align-items:center; justify-content:space-between;}
-  .order-total{font-size:13.5px; font-weight:900; color:var(--gold);}
-  .actions{display:flex; gap:6px;}
-  .act-btn{padding:8px 12px; border-radius:10px; border:none; font-size:11.5px; font-weight:800; cursor:pointer;}
-  .act-confirm{background:var(--gold); color:#20140e;}
-  .act-preparing{background:#4a3220; color:#f2c987;}
-  .act-done{background:var(--green); color:#0e2b16;}
-  .act-cancel{background:transparent; color:var(--red); border:1px solid rgba(226,85,79,.4);}
-  .empty{text-align:center; color:var(--muted); font-size:12.5px; padding:30px 0;}
+  body{ font-family:'Vazirmatn', -apple-system, sans-serif; background:#3a2113; color:#EFE7DD; min-height:100vh; }
+  .glass{ background:rgba(255,255,255,.05); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,.10); }
+  .glass-book{ background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-right:4px solid #8A9992; }
+  input{ font-family:inherit; }
 </style>
 </head>
 <body>
 
-<div id="loginView" class="wrap">
-  <div class="login-box">
-    <h1>ورود مدیر — کافه کتاب</h1>
-    <p>این پنل فقط برای مدیریت کافه‌ست</p>
-    <input type="email" id="loginEmail" placeholder="ایمیل">
-    <input type="password" id="loginPass" placeholder="رمز عبور">
-    <button id="loginBtn">ورود</button>
-    <div class="login-err" id="loginErr"></div>
+<div id="loginView" class="max-w-sm mx-auto px-5" style="padding-top:20vh">
+  <div class="glass rounded-3xl p-7 text-center">
+    <div class="text-3xl mb-3">📖</div>
+    <h1 class="text-base font-bold mb-1">ورود مدیر — کافه کتاب</h1>
+    <p class="text-xs text-on-surface-variant mb-6">این پنل فقط برای مدیریت کافه‌ست</p>
+    <input type="email" id="loginEmail" placeholder="ایمیل" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm mb-3 focus:outline-none">
+    <input type="password" id="loginPass" placeholder="رمز عبور" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm mb-4 focus:outline-none">
+    <button id="loginBtn" class="w-full py-3 rounded-xl font-bold text-sm" style="background:#8A9992; color:#22190F">ورود</button>
+    <div id="loginErr" class="text-[11px] mt-3 min-h-[14px]" style="color:#e2554f"></div>
   </div>
 </div>
 
-<div id="dashView" class="wrap" style="display:none">
-  <div class="top">
-    <h1>پنل مدیریت کافه کتاب</h1>
-    <button class="logout" id="logoutBtn">خروج</button>
+<div id="dashView" class="max-w-2xl mx-auto px-4 py-6" style="display:none">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-base font-bold">پنل مدیریت کافه کتاب</h1>
+    <button id="logoutBtn" class="text-xs text-on-surface-variant underline">خروج</button>
   </div>
 
-  <div class="stats-row">
-    <div class="stat"><div class="stat-num" id="statToday">۰ ت</div><div class="stat-lbl">فروش امروز</div></div>
-    <div class="stat"><div class="stat-num" id="statCount">۰</div><div class="stat-lbl">سفارش امروز</div></div>
-    <div class="stat"><div class="stat-num" id="statPending">۰</div><div class="stat-lbl">در انتظار تایید</div></div>
+  <div class="grid grid-cols-3 gap-3 mb-6">
+    <div class="glass rounded-2xl p-4 text-center">
+      <div class="text-lg font-extrabold" style="color:#8A9992" id="statToday">۰ ت</div>
+      <div class="text-[10px] text-on-surface-variant mt-1">فروش امروز</div>
+    </div>
+    <div class="glass rounded-2xl p-4 text-center">
+      <div class="text-lg font-extrabold" style="color:#8A9992" id="statCount">۰</div>
+      <div class="text-[10px] text-on-surface-variant mt-1">سفارش امروز</div>
+    </div>
+    <div class="glass rounded-2xl p-4 text-center">
+      <div class="text-lg font-extrabold" style="color:#8A9992" id="statPending">۰</div>
+      <div class="text-[10px] text-on-surface-variant mt-1">در انتظار تایید</div>
+    </div>
   </div>
 
-  <div class="tabs">
-    <div class="tab active" data-f="active">در جریان</div>
-    <div class="tab" data-f="done">تحویل‌شده</div>
-    <div class="tab" data-f="cancelled">لغوشده</div>
-    <div class="tab" data-f="all">همه</div>
+  <div class="flex gap-2 mb-5 overflow-x-auto">
+    <div class="tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-f="active" style="background:#55443A">در جریان</div>
+    <div class="tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer bg-white/5 text-on-surface-variant" data-f="done">تحویل‌شده</div>
+    <div class="tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer bg-white/5 text-on-surface-variant" data-f="cancelled">لغوشده</div>
+    <div class="tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer bg-white/5 text-on-surface-variant" data-f="all">همه</div>
   </div>
 
   <div id="ordersRoot"></div>
@@ -107,16 +75,10 @@ const STATUS_LABEL = { pending:'در انتظار تایید', confirmed:'تای
 let currentFilter = 'active';
 let allOrders = [];
 
-function toFaLocal(n){ return toFa(n); }
-
 async function checkSession() {
   const { data } = await supabaseClient.auth.getSession();
-  if (data.session) {
-    showDashboard();
-  } else {
-    document.getElementById('loginView').style.display = 'block';
-    document.getElementById('dashView').style.display = 'none';
-  }
+  if (data.session) showDashboard();
+  else { document.getElementById('loginView').style.display = 'block'; document.getElementById('dashView').style.display = 'none'; }
 }
 
 document.getElementById('loginBtn').addEventListener('click', async () => {
@@ -125,10 +87,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
   const errBox = document.getElementById('loginErr');
   errBox.textContent = '';
   const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  if (error) {
-    errBox.textContent = 'ایمیل یا رمز اشتباهه.';
-    return;
-  }
+  if (error) { errBox.textContent = 'ایمیل یا رمز اشتباهه.'; return; }
   showDashboard();
 });
 
@@ -145,8 +104,9 @@ function showDashboard() {
 
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
+    document.querySelectorAll('.tab').forEach(t => { t.style.background=''; t.classList.add('bg-white/5','text-on-surface-variant'); });
+    tab.style.background = '#55443A';
+    tab.classList.remove('bg-white/5','text-on-surface-variant');
     currentFilter = tab.dataset.f;
     renderOrders();
   });
@@ -154,11 +114,7 @@ document.querySelectorAll('.tab').forEach(tab => {
 
 async function loadOrders() {
   const { data, error } = await supabaseClient
-    .from('orders')
-    .select('*, order_items(*)')
-    .order('created_at', { ascending: false })
-    .limit(200);
-
+    .from('orders').select('*, order_items(*)').order('created_at', { ascending: false }).limit(200);
   if (error) { console.error(error); return; }
   allOrders = data || [];
   renderStats();
@@ -170,9 +126,9 @@ function renderStats() {
   const todays = allOrders.filter(o => new Date(o.created_at).toDateString() === today && o.status !== 'cancelled');
   const total = todays.reduce((s, o) => s + o.total, 0);
   const pending = allOrders.filter(o => o.status === 'pending').length;
-  document.getElementById('statToday').textContent = toFaLocal(total) + ' ت';
-  document.getElementById('statCount').textContent = toFaLocal(todays.length);
-  document.getElementById('statPending').textContent = toFaLocal(pending);
+  document.getElementById('statToday').textContent = toFa(total) + ' ت';
+  document.getElementById('statCount').textContent = toFa(todays.length);
+  document.getElementById('statPending').textContent = toFa(pending);
 }
 
 function renderOrders() {
@@ -182,26 +138,24 @@ function renderOrders() {
   else if (currentFilter === 'done') list = allOrders.filter(o => o.status === 'done');
   else if (currentFilter === 'cancelled') list = allOrders.filter(o => o.status === 'cancelled');
 
-  if (list.length === 0) {
-    root.innerHTML = '<div class="empty">سفارشی توی این دسته نیست</div>';
-    return;
-  }
+  if (list.length === 0) { root.innerHTML = '<div class="text-center text-on-surface-variant text-xs py-10">سفارشی توی این دسته نیست</div>'; return; }
 
   root.innerHTML = list.map(o => `
-    <div class="order-card">
-      <div class="order-top">
-        <span class="order-id">سفارش #${toFaLocal(o.id)} · ${STATUS_LABEL[o.status]}</span>
-        <span class="order-time">${new Date(o.created_at).toLocaleString('fa-IR')}</span>
+    <div class="glass-book rounded-2xl p-4 mb-3">
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-sm font-bold">سفارش #${toFa(o.id)} · ${STATUS_LABEL[o.status]}</span>
+        <span class="text-[10px] text-on-surface-variant">${new Date(o.created_at).toLocaleString('fa-IR')}</span>
       </div>
-      <div class="order-items">${o.order_items.map(it => `${toFaLocal(it.qty)} ${it.item_name}`).join('، ')}</div>
-      ${o.note ? `<div class="order-note">📝 ${o.note}</div>` : ''}
-      <div class="order-bottom">
-        <span class="order-total">${toFaLocal(o.total)} ت</span>
-        <div class="actions">
-          ${o.status === 'pending' ? `<button class="act-btn act-confirm" data-id="${o.id}" data-s="confirmed">تایید</button>` : ''}
-          ${o.status === 'confirmed' ? `<button class="act-btn act-preparing" data-id="${o.id}" data-s="preparing">در حال آماده‌سازی</button>` : ''}
-          ${o.status === 'preparing' ? `<button class="act-btn act-done" data-id="${o.id}" data-s="done">تحویل داده شد</button>` : ''}
-          ${['pending','confirmed','preparing'].includes(o.status) ? `<button class="act-btn act-cancel" data-id="${o.id}" data-s="cancelled">لغو</button>` : ''}
+      <div class="text-xs mb-1">${o.order_items.map(it => `${toFa(it.qty)} ${it.item_name}`).join('، ')}</div>
+      ${o.customer_name ? `<div class="text-[11px] mb-1" style="color:#8A9992">👤 ${o.customer_name} — <a href="tel:${o.customer_phone}" class="underline">${o.customer_phone || ''}</a></div>` : `<div class="text-[11px] text-on-surface-variant mb-1">👤 مهمان (ثبت‌نام نکرده)</div>`}
+      ${o.note ? `<div class="text-[11px] mb-2" style="color:#c9a97a">📝 ${o.note}</div>` : ''}
+      <div class="flex items-center justify-between mt-2">
+        <span class="font-bold text-sm" style="color:#8A9992">${toFa(o.total)} ت</span>
+        <div class="flex gap-2">
+          ${o.status === 'pending' ? `<button class="act-btn px-3 py-1.5 rounded-lg text-[11px] font-bold" style="background:#8A9992;color:#22190F" data-id="${o.id}" data-s="confirmed">تایید</button>` : ''}
+          ${o.status === 'confirmed' ? `<button class="act-btn px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white/10" data-id="${o.id}" data-s="preparing">در حال آماده‌سازی</button>` : ''}
+          ${o.status === 'preparing' ? `<button class="act-btn px-3 py-1.5 rounded-lg text-[11px] font-bold" style="background:#2dc653;color:#0e2b16" data-id="${o.id}" data-s="done">تحویل داده شد</button>` : ''}
+          ${['pending','confirmed','preparing'].includes(o.status) ? `<button class="act-btn px-3 py-1.5 rounded-lg text-[11px] font-bold border" style="color:#e2554f;border-color:rgba(226,85,79,.4)" data-id="${o.id}" data-s="cancelled">لغو</button>` : ''}
         </div>
       </div>
     </div>
@@ -209,10 +163,8 @@ function renderOrders() {
 
   document.querySelectorAll('.act-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const id = btn.dataset.id;
-      const status = btn.dataset.s;
       btn.disabled = true;
-      const { error } = await supabaseClient.from('orders').update({ status }).eq('id', id);
+      const { error } = await supabaseClient.from('orders').update({ status: btn.dataset.s }).eq('id', btn.dataset.id);
       if (error) { alert('خطا در بروزرسانی سفارش'); console.error(error); return; }
       await loadOrders();
     });
@@ -221,6 +173,5 @@ function renderOrders() {
 
 checkSession();
 </script>
-
 </body>
 </html>

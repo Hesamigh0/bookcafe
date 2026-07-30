@@ -22,7 +22,17 @@
   body{ font-family:'Vazirmatn', -apple-system, sans-serif; background:#3a2113; color:#EFE7DD; min-height:100vh; }
   .glass{ background:rgba(255,255,255,.05); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,.10); }
   .glass-book{ background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-right:4px solid #8A9992; }
-  input{ font-family:inherit; }
+  input,select,textarea{ font-family:inherit; }
+  .tab{ background:rgba(255,255,255,.05); color:#CBB9A9; }
+  .tab.active{ background:#55443A; color:#fff; }
+  .page{ display:none; }
+  .page.active{ display:block; }
+  .bar{ background:#8A9992; border-radius:6px 6px 0 0; transition:height .4s ease; }
+  @media print {
+    body *{ visibility:hidden; }
+    #printArea, #printArea *{ visibility:visible; }
+    #printArea{ position:absolute; top:0; left:0; width:100%; color:#000; background:#fff; }
+  }
 </style>
 </head>
 <body>
@@ -39,41 +49,103 @@
   </div>
 </div>
 
-<div id="dashView" class="max-w-2xl mx-auto px-4 py-6" style="display:none">
-  <div class="flex items-center justify-between mb-6">
+<div id="dashView" class="max-w-3xl mx-auto px-4 py-6" style="display:none">
+  <div class="flex items-center justify-between mb-5">
     <h1 class="text-base font-bold">پنل مدیریت کافه کتاب</h1>
     <button id="logoutBtn" class="text-xs text-on-surface-variant underline">خروج</button>
   </div>
 
-  <div class="grid grid-cols-3 gap-3 mb-6">
-    <div class="glass rounded-2xl p-4 text-center">
-      <div class="text-lg font-extrabold" style="color:#8A9992" id="statToday">۰ ت</div>
-      <div class="text-[10px] text-on-surface-variant mt-1">فروش امروز</div>
+  <div class="flex gap-2 mb-6 overflow-x-auto">
+    <div class="tab-btn tab active whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-p="dashboard">داشبورد</div>
+    <div class="tab-btn tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-p="orders">سفارش‌ها</div>
+    <div class="tab-btn tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-p="menu">مدیریت منو</div>
+  </div>
+
+  <!-- ============ DASHBOARD PAGE ============ -->
+  <div class="page active" id="page-dashboard">
+    <div class="grid grid-cols-3 gap-3 mb-5">
+      <div class="glass rounded-2xl p-4 text-center">
+        <div class="text-lg font-extrabold" style="color:#8A9992" id="statToday">۰ ت</div>
+        <div class="text-[10px] text-on-surface-variant mt-1">فروش امروز</div>
+      </div>
+      <div class="glass rounded-2xl p-4 text-center">
+        <div class="text-lg font-extrabold" style="color:#8A9992" id="statWeek">۰ ت</div>
+        <div class="text-[10px] text-on-surface-variant mt-1">فروش هفته</div>
+      </div>
+      <div class="glass rounded-2xl p-4 text-center">
+        <div class="text-lg font-extrabold" style="color:#8A9992" id="statMonth">۰ ت</div>
+        <div class="text-[10px] text-on-surface-variant mt-1">فروش ماه</div>
+      </div>
     </div>
-    <div class="glass rounded-2xl p-4 text-center">
-      <div class="text-lg font-extrabold" style="color:#8A9992" id="statCount">۰</div>
-      <div class="text-[10px] text-on-surface-variant mt-1">سفارش امروز</div>
+    <div class="grid grid-cols-3 gap-3 mb-6">
+      <div class="glass rounded-2xl p-4 text-center">
+        <div class="text-base font-extrabold" id="statOrdersToday">۰</div>
+        <div class="text-[10px] text-on-surface-variant mt-1">سفارش امروز</div>
+      </div>
+      <div class="glass rounded-2xl p-4 text-center">
+        <div class="text-base font-extrabold" id="statPending">۰</div>
+        <div class="text-[10px] text-on-surface-variant mt-1">در انتظار تایید</div>
+      </div>
+      <div class="glass rounded-2xl p-4 text-center">
+        <div class="text-base font-extrabold" id="statAvg">۰ ت</div>
+        <div class="text-[10px] text-on-surface-variant mt-1">میانگین فاکتور</div>
+      </div>
     </div>
-    <div class="glass rounded-2xl p-4 text-center">
-      <div class="text-lg font-extrabold" style="color:#8A9992" id="statPending">۰</div>
-      <div class="text-[10px] text-on-surface-variant mt-1">در انتظار تایید</div>
+
+    <div class="glass rounded-2xl p-5 mb-6">
+      <h3 class="text-sm font-bold mb-4">فروش ۷ روز اخیر</h3>
+      <div id="salesChart" class="flex items-end justify-between gap-2" style="height:130px;"></div>
+    </div>
+
+    <div class="glass rounded-2xl p-5">
+      <h3 class="text-sm font-bold mb-4">پرفروش‌ترین آیتم‌ها (۳۰ روز اخیر)</h3>
+      <div id="topProducts"></div>
     </div>
   </div>
 
-  <div class="flex gap-2 mb-5 overflow-x-auto">
-    <div class="tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-f="active" style="background:#55443A">در جریان</div>
-    <div class="tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer bg-white/5 text-on-surface-variant" data-f="done">تحویل‌شده</div>
-    <div class="tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer bg-white/5 text-on-surface-variant" data-f="cancelled">لغوشده</div>
-    <div class="tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer bg-white/5 text-on-surface-variant" data-f="all">همه</div>
+  <!-- ============ ORDERS PAGE ============ -->
+  <div class="page" id="page-orders">
+    <div class="flex items-center justify-between mb-4 gap-2">
+      <div class="flex gap-2 overflow-x-auto">
+        <div class="ord-tab tab active whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-f="active">در جریان</div>
+        <div class="ord-tab tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-f="done">تحویل‌شده</div>
+        <div class="ord-tab tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-f="cancelled">لغوشده</div>
+        <div class="ord-tab tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-f="all">همه</div>
+      </div>
+    </div>
+    <div class="flex gap-2 mb-5">
+      <button onclick="exportCSV()" class="flex-1 py-2.5 rounded-xl text-xs font-bold" style="background:#8A9992;color:#22190F">📊 خروجی اکسل (CSV)</button>
+      <button onclick="printOrders()" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-white/10">🖨️ چاپ</button>
+    </div>
+    <div id="ordersRoot"></div>
   </div>
 
-  <div id="ordersRoot"></div>
+  <!-- ============ MENU MANAGEMENT PAGE ============ -->
+  <div class="page" id="page-menu">
+    <div class="glass rounded-2xl p-4 mb-5">
+      <h3 class="text-sm font-bold mb-3">افزودن آیتم جدید</h3>
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <input id="newItemCategory" list="catList" placeholder="دسته (مثلا اسپرسو بار)" class="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs">
+        <datalist id="catList"></datalist>
+        <input id="newItemName" placeholder="اسم آیتم" class="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs">
+      </div>
+      <div class="flex gap-2">
+        <input id="newItemPrice" type="number" placeholder="قیمت" class="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs">
+        <button onclick="addMenuItem()" class="px-5 py-2 rounded-lg text-xs font-bold" style="background:#8A9992;color:#22190F">افزودن</button>
+      </div>
+      <div id="menuAddErr" class="text-[11px] mt-2" style="color:#e2554f"></div>
+    </div>
+    <div id="menuManageRoot"></div>
+  </div>
+
 </div>
 
+<div id="printArea" style="display:none"></div>
+
 <script>
-const STATUS_LABEL = { pending:'در انتظار تایید', confirmed:'تایید شد', preparing:'در حال آماده‌سازی', done:'تحویل داده شد', cancelled:'لغو شد' };
-let currentFilter = 'active';
 let allOrders = [];
+let currentOrderFilter = 'active';
+let allMenuItems = [];
 
 async function checkSession() {
   const { data } = await supabaseClient.auth.getSession();
@@ -100,43 +172,95 @@ function showDashboard() {
   document.getElementById('loginView').style.display = 'none';
   document.getElementById('dashView').style.display = 'block';
   loadOrders();
+  loadMenuItems();
 }
 
-document.querySelectorAll('.tab').forEach(tab => {
+/* ---------------- tab switching ---------------- */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + btn.dataset.p).classList.add('active');
+  });
+});
+document.querySelectorAll('.ord-tab').forEach(tab => {
   tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => { t.style.background=''; t.classList.add('bg-white/5','text-on-surface-variant'); });
-    tab.style.background = '#55443A';
-    tab.classList.remove('bg-white/5','text-on-surface-variant');
-    currentFilter = tab.dataset.f;
+    document.querySelectorAll('.ord-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentOrderFilter = tab.dataset.f;
     renderOrders();
   });
 });
 
+/* ---------------- orders + dashboard data ---------------- */
 async function loadOrders() {
   const { data, error } = await supabaseClient
-    .from('orders').select('*, order_items(*)').order('created_at', { ascending: false }).limit(200);
+    .from('orders').select('*, order_items(*)').order('created_at', { ascending: false }).limit(500);
   if (error) { console.error(error); return; }
   allOrders = data || [];
-  renderStats();
+  renderDashboard();
   renderOrders();
 }
 
-function renderStats() {
-  const today = new Date().toDateString();
-  const todays = allOrders.filter(o => new Date(o.created_at).toDateString() === today && o.status !== 'cancelled');
-  const total = todays.reduce((s, o) => s + o.total, 0);
+function renderDashboard() {
+  const now = new Date();
+  const todayStr = now.toDateString();
+  const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
+  const monthAgo = new Date(now); monthAgo.setDate(now.getDate() - 30);
+
+  const validOrders = allOrders.filter(o => o.status !== 'cancelled');
+  const todays = validOrders.filter(o => new Date(o.created_at).toDateString() === todayStr);
+  const week = validOrders.filter(o => new Date(o.created_at) >= weekAgo);
+  const month = validOrders.filter(o => new Date(o.created_at) >= monthAgo);
   const pending = allOrders.filter(o => o.status === 'pending').length;
-  document.getElementById('statToday').textContent = toFa(total) + ' ت';
-  document.getElementById('statCount').textContent = toFa(todays.length);
+
+  document.getElementById('statToday').textContent = toFa(todays.reduce((s,o)=>s+o.total,0)) + ' ت';
+  document.getElementById('statWeek').textContent = toFa(week.reduce((s,o)=>s+o.total,0)) + ' ت';
+  document.getElementById('statMonth').textContent = toFa(month.reduce((s,o)=>s+o.total,0)) + ' ت';
+  document.getElementById('statOrdersToday').textContent = toFa(todays.length);
   document.getElementById('statPending').textContent = toFa(pending);
+  document.getElementById('statAvg').textContent = toFa(month.length ? Math.round(month.reduce((s,o)=>s+o.total,0)/month.length) : 0) + ' ت';
+
+  // 7-day chart
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now); d.setDate(now.getDate() - i);
+    const dayTotal = validOrders.filter(o => new Date(o.created_at).toDateString() === d.toDateString()).reduce((s,o)=>s+o.total,0);
+    days.push({ label: d.toLocaleDateString('fa-IR', { weekday:'short' }), total: dayTotal });
+  }
+  const max = Math.max(...days.map(d=>d.total), 1);
+  document.getElementById('salesChart').innerHTML = days.map(d => `
+    <div class="flex-1 flex flex-col items-center gap-1.5">
+      <div class="text-[9px] text-on-surface-variant">${toFa(d.total)}</div>
+      <div class="bar w-full" style="height:${Math.max(4, (d.total/max)*95)}px"></div>
+      <div class="text-[9px] text-on-surface-variant">${d.label}</div>
+    </div>
+  `).join('');
+
+  // top products (30 days)
+  const itemCounts = {};
+  month.forEach(o => o.order_items.forEach(it => {
+    itemCounts[it.item_name] = (itemCounts[it.item_name] || 0) + it.qty;
+  }));
+  const sorted = Object.entries(itemCounts).sort((a,b) => b[1]-a[1]).slice(0,5);
+  const topMax = sorted.length ? sorted[0][1] : 1;
+  document.getElementById('topProducts').innerHTML = sorted.length ? sorted.map(([name,qty]) => `
+    <div class="mb-3">
+      <div class="flex justify-between text-xs mb-1"><span>${name}</span><span class="text-on-surface-variant">${toFa(qty)} عدد</span></div>
+      <div class="w-full bg-white/5 rounded-full h-2 overflow-hidden"><div class="h-full" style="width:${(qty/topMax)*100}%; background:#8A9992"></div></div>
+    </div>
+  `).join('') : '<div class="text-xs text-on-surface-variant text-center py-4">هنوز داده‌ای نیست</div>';
 }
+
+const STATUS_LABEL = { pending:'در انتظار تایید', confirmed:'تایید شد', preparing:'در حال آماده‌سازی', done:'تحویل داده شد', cancelled:'لغو شد' };
 
 function renderOrders() {
   const root = document.getElementById('ordersRoot');
   let list = allOrders;
-  if (currentFilter === 'active') list = allOrders.filter(o => ['pending','confirmed','preparing'].includes(o.status));
-  else if (currentFilter === 'done') list = allOrders.filter(o => o.status === 'done');
-  else if (currentFilter === 'cancelled') list = allOrders.filter(o => o.status === 'cancelled');
+  if (currentOrderFilter === 'active') list = allOrders.filter(o => ['pending','confirmed','preparing'].includes(o.status));
+  else if (currentOrderFilter === 'done') list = allOrders.filter(o => o.status === 'done');
+  else if (currentOrderFilter === 'cancelled') list = allOrders.filter(o => o.status === 'cancelled');
 
   if (list.length === 0) { root.innerHTML = '<div class="text-center text-on-surface-variant text-xs py-10">سفارشی توی این دسته نیست</div>'; return; }
 
@@ -169,6 +293,136 @@ function renderOrders() {
       await loadOrders();
     });
   });
+}
+
+/* ---------------- export / print ---------------- */
+function exportCSV() {
+  let list = allOrders;
+  if (currentOrderFilter === 'active') list = allOrders.filter(o => ['pending','confirmed','preparing'].includes(o.status));
+  else if (currentOrderFilter === 'done') list = allOrders.filter(o => o.status === 'done');
+  else if (currentOrderFilter === 'cancelled') list = allOrders.filter(o => o.status === 'cancelled');
+
+  const rows = [['شماره سفارش','تاریخ','آیتم‌ها','مشتری','شماره تماس','وضعیت','مبلغ (تومان)']];
+  list.forEach(o => {
+    rows.push([
+      o.id,
+      new Date(o.created_at).toLocaleString('fa-IR'),
+      o.order_items.map(it => `${it.qty}x ${it.item_name}`).join(' | '),
+      o.customer_name || 'مهمان',
+      o.customer_phone || '',
+      STATUS_LABEL[o.status] || o.status,
+      o.total
+    ]);
+  });
+  const csv = '\uFEFF' + rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'orders-' + new Date().toISOString().slice(0,10) + '.csv';
+  link.click();
+}
+
+function printOrders() {
+  let list = allOrders;
+  if (currentOrderFilter === 'active') list = allOrders.filter(o => ['pending','confirmed','preparing'].includes(o.status));
+  else if (currentOrderFilter === 'done') list = allOrders.filter(o => o.status === 'done');
+  else if (currentOrderFilter === 'cancelled') list = allOrders.filter(o => o.status === 'cancelled');
+
+  const rowsHtml = list.map(o => `
+    <tr>
+      <td>${o.id}</td>
+      <td>${new Date(o.created_at).toLocaleString('fa-IR')}</td>
+      <td>${o.order_items.map(it => `${it.qty}x ${it.item_name}`).join('، ')}</td>
+      <td>${o.customer_name || 'مهمان'}</td>
+      <td>${o.customer_phone || ''}</td>
+      <td>${STATUS_LABEL[o.status] || o.status}</td>
+      <td>${o.total.toLocaleString('fa-IR')} ت</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('printArea').innerHTML = `
+    <h2 style="font-family:Vazirmatn,sans-serif">گزارش سفارش‌های کافه کتاب — ${new Date().toLocaleDateString('fa-IR')}</h2>
+    <table style="width:100%; border-collapse:collapse; font-family:Vazirmatn,sans-serif; font-size:12px;" dir="rtl">
+      <thead><tr style="border-bottom:2px solid #000">
+        <th style="padding:6px; text-align:right;">شماره</th><th style="padding:6px; text-align:right;">تاریخ</th>
+        <th style="padding:6px; text-align:right;">آیتم‌ها</th><th style="padding:6px; text-align:right;">مشتری</th>
+        <th style="padding:6px; text-align:right;">تماس</th><th style="padding:6px; text-align:right;">وضعیت</th>
+        <th style="padding:6px; text-align:right;">مبلغ</th>
+      </tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>`;
+  window.print();
+}
+
+/* ---------------- menu management ---------------- */
+async function loadMenuItems() {
+  const { data, error } = await supabaseClient.from('menu_items').select('*').order('category').order('sort_order');
+  if (error) { console.error(error); return; }
+  allMenuItems = data || [];
+  document.getElementById('catList').innerHTML = [...new Set(allMenuItems.map(i=>i.category))].map(c => `<option value="${c}">`).join('');
+  renderMenuManage();
+}
+
+function renderMenuManage() {
+  const root = document.getElementById('menuManageRoot');
+  const byCat = {};
+  allMenuItems.forEach(i => { (byCat[i.category] = byCat[i.category] || []).push(i); });
+
+  root.innerHTML = Object.entries(byCat).map(([cat, items]) => `
+    <div class="mb-5">
+      <h4 class="text-xs font-bold mb-2 text-on-surface-variant">${cat}</h4>
+      ${items.map(item => `
+        <div class="glass-book rounded-xl p-3 mb-2 flex items-center gap-2">
+          <input value="${item.name}" data-id="${item.id}" data-field="name" class="menu-field flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs">
+          <input type="number" value="${item.price}" data-id="${item.id}" data-field="price" class="menu-field w-20 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs">
+          <label class="flex items-center gap-1 text-[10px] text-on-surface-variant flex-shrink-0">
+            <input type="checkbox" ${item.is_available ? 'checked' : ''} data-id="${item.id}" data-field="is_available" class="menu-avail">
+            فعال
+          </label>
+          <button onclick="deleteMenuItem(${item.id})" class="text-[11px] px-2 py-1.5 rounded-lg flex-shrink-0" style="color:#e2554f">حذف</button>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+
+  document.querySelectorAll('.menu-field').forEach(el => {
+    el.addEventListener('change', async () => {
+      const id = el.dataset.id, field = el.dataset.field;
+      const value = field === 'price' ? Number(el.value) : el.value;
+      const { error } = await supabaseClient.from('menu_items').update({ [field]: value }).eq('id', id);
+      if (error) { alert('خطا در ذخیره تغییرات'); console.error(error); }
+    });
+  });
+  document.querySelectorAll('.menu-avail').forEach(el => {
+    el.addEventListener('change', async () => {
+      const id = el.dataset.id;
+      const { error } = await supabaseClient.from('menu_items').update({ is_available: el.checked }).eq('id', id);
+      if (error) { alert('خطا در ذخیره تغییرات'); console.error(error); }
+    });
+  });
+}
+
+async function addMenuItem() {
+  const category = document.getElementById('newItemCategory').value.trim();
+  const name = document.getElementById('newItemName').value.trim();
+  const price = Number(document.getElementById('newItemPrice').value);
+  const errBox = document.getElementById('menuAddErr');
+  if (!category || !name || !price) { errBox.textContent = 'دسته، اسم، و قیمت رو کامل کن'; return; }
+  errBox.textContent = '';
+
+  const { error } = await supabaseClient.from('menu_items').insert({ category, name, price, sort_order: 99 });
+  if (error) { errBox.textContent = 'خطا در افزودن آیتم'; console.error(error); return; }
+
+  document.getElementById('newItemName').value = '';
+  document.getElementById('newItemPrice').value = '';
+  loadMenuItems();
+}
+
+async function deleteMenuItem(id) {
+  if (!confirm('این آیتم حذف بشه؟')) return;
+  const { error } = await supabaseClient.from('menu_items').delete().eq('id', id);
+  if (error) { alert('خطا در حذف آیتم'); console.error(error); return; }
+  loadMenuItems();
 }
 
 checkSession();

@@ -3,30 +3,62 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#374142">
+<meta name="theme-color" content="#CFCFCD">
 <title>پنل مدیریت — کافه کتاب</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script>
   tailwind.config = { theme: { extend: { colors: {
-    primary: "#8A9992", "on-primary": "#22190F", secondary: "#374142",
-    background: "#4D2308", "on-surface-variant": "#000000"
+    primary: "#8A9992", "on-primary": "#1c2420", success:"#2DC653", warning:"#D4A017", danger:"#E2554F",
+    background: "#CFCFCD", text2: "#666666"
   } } } }
 </script>
 <style>
-  body{ font-family:'Vazirmatn', -apple-system, sans-serif; background:#a8ada9; color:#EFE7DD; min-height:100vh; padding-bottom:40px; }
-  .glass{ background:rgba(255,255,255,.05); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,.10); }
-  .glass-book{ background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-right:4px solid #8A9992; }
+  *{ box-sizing:border-box; }
+  body{ font-family:'Vazirmatn', -apple-system, sans-serif; background:#CFCFCD; color:#2E2E2E; min-height:100vh; }
+  .glass{ background:rgba(255,255,255,.62); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border:1px solid #E5E5E5; box-shadow:0 6px 24px rgba(0,0,0,.06); }
+  .glass-book{ background:rgba(255,255,255,.72); border:1px solid #E5E5E5; border-right:4px solid #8A9992; box-shadow:0 3px 12px rgba(0,0,0,.04); transition:transform .15s ease, box-shadow .15s ease; }
+  .glass-book:hover{ box-shadow:0 8px 20px rgba(0,0,0,.08); }
   input,select,textarea{ font-family:inherit; }
-  .tab{ background:rgba(255,255,255,.05); color:#000000; }
-  .tab.active{ background:#374142; color:#fff; }
+  .inp{ background:#fff; border:1px solid #E5E5E5; border-radius:.65rem; padding:.55rem .8rem; font-size:12.5px; color:#2E2E2E; }
+  .inp:focus{ outline:none; border-color:#8A9992; }
+  .tab{ background:rgba(255,255,255,.55); color:#666666; border:1px solid #E5E5E5; }
+  .tab.active{ background:#8A9992; color:#fff; border-color:#8A9992; }
+  .bar{ background:#8A9992; border-radius:6px 6px 0 0; transition:height .5s cubic-bezier(.22,1,.36,1); }
+  .low-stock{ border-right-color:#E2554F !important; }
+  .fade-in{ animation:fadeIn .35s ease both; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  /* ---------- layout ---------- */
+  #appShell{ display:flex; min-height:100vh; }
+  .sidebar{
+    width:230px; flex-shrink:0; background:rgba(255,255,255,.7); backdrop-filter:blur(20px);
+    border-left:1px solid #E5E5E5; display:flex; flex-direction:column; padding:20px 14px;
+    position:fixed; top:0; right:0; bottom:0; z-index:60; transition:transform .3s cubic-bezier(.22,1,.36,1);
+  }
+  .side-link{ display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:12px; font-size:13px; font-weight:600; color:#666; cursor:pointer; margin-bottom:3px; transition:background .2s ease, color .2s ease; }
+  .side-link:hover{ background:rgba(138,153,146,.12); }
+  .side-link.active{ background:#8A9992; color:#fff; }
+  .main-content{ flex:1; margin-right:230px; padding:22px 24px 60px; min-width:0; }
+  .mobile-topbar{ display:none; }
+  .drawer-overlay{ display:none; }
+
+  @media (max-width: 900px){
+    .sidebar{ transform:translateX(100%); box-shadow:-10px 0 30px rgba(0,0,0,.15); }
+    .sidebar.open{ transform:translateX(0); }
+    .main-content{ margin-right:0; padding:16px 14px 70px; }
+    .mobile-topbar{
+      display:flex; align-items:center; justify-content:space-between; padding:14px 16px;
+      position:sticky; top:0; z-index:50; background:rgba(207,207,205,.9); backdrop-filter:blur(12px); border-bottom:1px solid #E5E5E5;
+    }
+    .drawer-overlay.open{ display:block; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:55; }
+  }
+
   .page{ display:none; }
   .page.active{ display:block; }
-  .bar{ background:#8A9992; border-radius:6px 6px 0 0; transition:height .4s ease; }
-  .inp{ background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:.5rem; padding:.5rem .7rem; font-size:12px; }
-  .low-stock{ border-right-color:#e2554f !important; }
+
   @media print {
     body *{ visibility:hidden; }
     #printArea, #printArea *{ visibility:visible; }
@@ -40,186 +72,302 @@
   <div class="glass rounded-3xl p-7 text-center">
     <div class="text-3xl mb-3">📖</div>
     <h1 class="text-base font-bold mb-1">ورود مدیر — کافه کتاب</h1>
-    <p class="text-xs text-on-surface-variant mb-6">این پنل فقط برای مدیریت کافه‌ست</p>
-    <input type="email" id="loginEmail" placeholder="ایمیل" class="w-full inp mb-3">
+    <p class="text-xs" style="color:#666">این پنل فقط برای مدیریت کافه‌ست</p>
+    <input type="email" id="loginEmail" placeholder="ایمیل" class="w-full inp mb-3 mt-5">
     <input type="password" id="loginPass" placeholder="رمز عبور" class="w-full inp mb-4">
-    <button id="loginBtn" class="w-full py-3 rounded-xl font-bold text-sm" style="background:#8A9992; color:#22190F">ورود</button>
-    <div id="loginErr" class="text-[11px] mt-3 min-h-[14px]" style="color:#e2554f"></div>
+    <button id="loginBtn" class="w-full py-3 rounded-xl font-bold text-sm text-white" style="background:#8A9992">ورود</button>
+    <div id="loginErr" class="text-[11px] mt-3 min-h-[14px]" style="color:#E2554F"></div>
   </div>
 </div>
 
-<div id="dashView" class="max-w-3xl mx-auto px-4 py-6" style="display:none">
-  <div class="flex items-center justify-between mb-5">
-    <h1 class="text-base font-bold">پنل مدیریت کافه کتاب</h1>
-    <button id="logoutBtn" class="text-xs text-on-surface-variant underline">خروج</button>
-  </div>
+<div id="dashView" style="display:none">
+<div id="appShell">
 
-  <div class="flex gap-2 mb-6 overflow-x-auto pb-1">
-    <div class="tab-btn tab active whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-p="dashboard">داشبورد</div>
-    <div class="tab-btn tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-p="orders">سفارش‌ها</div>
-    <div class="tab-btn tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-p="menu">منو</div>
-    <div class="tab-btn tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-p="customers">مشتری‌ها</div>
-    <div class="tab-btn tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-p="accounting">حسابداری</div>
-    <div class="tab-btn tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-p="cash">صندوق</div>
-    <div class="tab-btn tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-p="inventory">انبار</div>
-    <div class="tab-btn tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-p="staff">کارکنان</div>
-    <div class="tab-btn tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-p="settings">تنظیمات</div>
-  </div>
+  <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawer()"></div>
 
-  <!-- ============ DASHBOARD ============ -->
-  <div class="page active" id="page-dashboard">
-    <div class="grid grid-cols-3 gap-3 mb-5">
-      <div class="glass rounded-2xl p-4 text-center"><div class="text-lg font-extrabold" style="color:#8A9992" id="statToday">۰ ت</div><div class="text-[10px] text-on-surface-variant mt-1">فروش امروز</div></div>
-      <div class="glass rounded-2xl p-4 text-center"><div class="text-lg font-extrabold" style="color:#8A9992" id="statWeek">۰ ت</div><div class="text-[10px] text-on-surface-variant mt-1">فروش هفته</div></div>
-      <div class="glass rounded-2xl p-4 text-center"><div class="text-lg font-extrabold" style="color:#8A9992" id="statMonth">۰ ت</div><div class="text-[10px] text-on-surface-variant mt-1">فروش ماه</div></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="flex items-center gap-2 px-2 mb-6">
+      <span class="text-2xl">📖</span>
+      <div><div class="text-sm font-bold">کافه کتاب</div><div class="text-[10px]" style="color:#8A9992">پنل مدیریت</div></div>
     </div>
-    <div class="grid grid-cols-3 gap-3 mb-5">
-      <div class="glass rounded-2xl p-4 text-center"><div class="text-base font-extrabold" id="statOrdersToday">۰</div><div class="text-[10px] text-on-surface-variant mt-1">سفارش امروز</div></div>
-      <div class="glass rounded-2xl p-4 text-center"><div class="text-base font-extrabold" id="statPending">۰</div><div class="text-[10px] text-on-surface-variant mt-1">در انتظار تایید</div></div>
-      <div class="glass rounded-2xl p-4 text-center"><div class="text-base font-extrabold" id="statAvg">۰ ت</div><div class="text-[10px] text-on-surface-variant mt-1">میانگین فاکتور</div></div>
+    <nav class="flex-1 overflow-y-auto">
+      <div class="side-link active" data-p="dashboard"><span>📊</span>داشبورد</div>
+      <div class="side-link" data-p="orders"><span>🧾</span>سفارش‌ها</div>
+      <div class="side-link" data-p="menu"><span>📋</span>منو</div>
+      <div class="side-link" data-p="customers"><span>👥</span>مشتری‌ها</div>
+      <div class="side-link" data-p="accounting"><span>💰</span>حسابداری</div>
+      <div class="side-link" data-p="cash"><span>🗄️</span>صندوق</div>
+      <div class="side-link" data-p="inventory"><span>📦</span>انبار</div>
+      <div class="side-link" data-p="staff"><span>👤</span>کارکنان</div>
+      <div class="side-link" data-p="settings"><span>⚙️</span>تنظیمات</div>
+    </nav>
+    <button id="logoutBtn" class="text-xs mt-4 py-2.5 rounded-xl border" style="color:#E2554F; border-color:#E2554F55">خروج</button>
+  </aside>
+
+  <header class="mobile-topbar">
+    <div class="flex items-center gap-2">
+      <span class="text-xl">📖</span><span class="font-bold text-sm">کافه کتاب</span>
+    </div>
+    <button onclick="openDrawer()" class="w-9 h-9 rounded-lg glass flex items-center justify-center">☰</button>
+  </header>
+
+  <main class="main-content">
+    <div class="flex items-center justify-between mb-6">
+      <h1 id="pageTitle" class="text-lg font-bold">داشبورد</h1>
     </div>
 
-    <div class="glass rounded-2xl p-5 mb-5" style="border-color:rgba(138,153,146,.35)">
-      <h3 class="text-sm font-bold mb-3">سود و زیان این ماه</h3>
-      <div class="grid grid-cols-3 gap-2 text-center">
-        <div><div class="text-sm font-extrabold" style="color:#8A9992" id="plIncome">۰</div><div class="text-[9px] text-on-surface-variant mt-1">درآمد</div></div>
-        <div><div class="text-sm font-extrabold" style="color:#e2554f" id="plExpense">۰</div><div class="text-[9px] text-on-surface-variant mt-1">هزینه</div></div>
-        <div><div class="text-sm font-extrabold" id="plNet">۰</div><div class="text-[9px] text-on-surface-variant mt-1">سود خالص</div></div>
+    <!-- ============ DASHBOARD ============ -->
+    <div class="page active fade-in" id="page-dashboard">
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-5">
+        <div class="glass rounded-2xl p-5 text-center"><div class="text-xl font-extrabold" style="color:#8A9992" id="statToday">۰ ت</div><div class="text-[11px] mt-1" style="color:#666">فروش امروز</div></div>
+        <div class="glass rounded-2xl p-5 text-center"><div class="text-xl font-extrabold" style="color:#8A9992" id="statWeek">۰ ت</div><div class="text-[11px] mt-1" style="color:#666">فروش هفته</div></div>
+        <div class="glass rounded-2xl p-5 text-center"><div class="text-xl font-extrabold" style="color:#8A9992" id="statMonth">۰ ت</div><div class="text-[11px] mt-1" style="color:#666">فروش ماه</div></div>
+      </div>
+      <div class="grid grid-cols-3 gap-4 mb-5">
+        <div class="glass rounded-2xl p-4 text-center"><div class="text-base font-extrabold" id="statOrdersToday">۰</div><div class="text-[10px] mt-1" style="color:#666">سفارش امروز</div></div>
+        <div class="glass rounded-2xl p-4 text-center"><div class="text-base font-extrabold" id="statPending">۰</div><div class="text-[10px] mt-1" style="color:#666">در انتظار تایید</div></div>
+        <div class="glass rounded-2xl p-4 text-center"><div class="text-base font-extrabold" id="statAvg">۰ ت</div><div class="text-[10px] mt-1" style="color:#666">میانگین فاکتور</div></div>
+      </div>
+
+      <div class="glass rounded-2xl p-5 mb-5">
+        <h3 class="text-sm font-bold mb-4">سود و زیان این ماه <span class="text-[10px] font-normal" style="color:#666">(بر اساس <span id="marginLabel1">۳۵</span>٪ سود هر فروش)</span></h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+          <div><div class="text-sm font-extrabold" style="color:#8A9992" id="plIncome">۰</div><div class="text-[9px] mt-1" style="color:#666">درآمد فروش</div></div>
+          <div><div class="text-sm font-extrabold" style="color:#D4A017" id="plGross">۰</div><div class="text-[9px] mt-1" style="color:#666">سود ناخالص</div></div>
+          <div><div class="text-sm font-extrabold" style="color:#E2554F" id="plExpense">۰</div><div class="text-[9px] mt-1" style="color:#666">هزینه</div></div>
+          <div><div class="text-sm font-extrabold" id="plNet">۰</div><div class="text-[9px] mt-1" style="color:#666">سود خالص</div></div>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-5">
+        <div class="glass rounded-2xl p-5">
+          <h3 class="text-sm font-bold mb-4">فروش ۷ روز اخیر</h3>
+          <div id="salesChart" class="flex items-end justify-between gap-2" style="height:130px;"></div>
+        </div>
+        <div class="glass rounded-2xl p-5">
+          <h3 class="text-sm font-bold mb-4">پرفروش‌ترین آیتم‌ها (۳۰ روز اخیر)</h3>
+          <div id="topProducts"></div>
+        </div>
       </div>
     </div>
 
-    <div class="glass rounded-2xl p-5 mb-5">
-      <h3 class="text-sm font-bold mb-4">فروش ۷ روز اخیر</h3>
-      <div id="salesChart" class="flex items-end justify-between gap-2" style="height:130px;"></div>
-    </div>
-
-    <div class="glass rounded-2xl p-5">
-      <h3 class="text-sm font-bold mb-4">پرفروش‌ترین آیتم‌ها (۳۰ روز اخیر)</h3>
-      <div id="topProducts"></div>
-    </div>
-  </div>
-
-  <!-- ============ ORDERS ============ -->
-  <div class="page" id="page-orders">
-    <div class="flex gap-2 overflow-x-auto mb-4">
-      <div class="ord-tab tab active whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-f="active">در جریان</div>
-      <div class="ord-tab tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-f="done">تحویل‌شده</div>
-      <div class="ord-tab tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-f="cancelled">لغوشده</div>
-      <div class="ord-tab tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-f="all">همه</div>
-    </div>
-    <div class="flex gap-2 mb-5">
-      <button onclick="exportCSV()" class="flex-1 py-2.5 rounded-xl text-xs font-bold" style="background:#8A9992;color:#22190F">📊 خروجی اکسل</button>
-      <button onclick="printOrders()" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-white/10">🖨️ چاپ</button>
-    </div>
-    <div id="ordersRoot"></div>
-  </div>
-
-  <!-- ============ MENU ============ -->
-  <div class="page" id="page-menu">
-    <div class="glass rounded-2xl p-4 mb-5">
-      <h3 class="text-sm font-bold mb-3">افزودن آیتم جدید</h3>
-      <div class="grid grid-cols-2 gap-2 mb-2">
-        <input id="newItemCategory" list="catList" placeholder="دسته" class="inp">
-        <datalist id="catList"></datalist>
-        <input id="newItemName" placeholder="اسم آیتم" class="inp">
+    <!-- ============ ORDERS ============ -->
+    <div class="page" id="page-orders">
+      <div class="flex flex-wrap gap-2 mb-4">
+        <button onclick="togglePOS()" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white" style="background:#8A9992">➕ ثبت سفارش دستی</button>
+        <button onclick="exportCSV()" class="px-4 py-2.5 rounded-xl text-xs font-bold glass">📊 خروجی اکسل</button>
+        <button onclick="printOrders()" class="px-4 py-2.5 rounded-xl text-xs font-bold glass">🖨️ چاپ</button>
       </div>
-      <div class="flex gap-2">
-        <input id="newItemPrice" type="number" placeholder="قیمت" class="inp flex-1">
-        <button onclick="addMenuItem()" class="px-5 py-2 rounded-lg text-xs font-bold" style="background:#8A9992;color:#22190F">افزودن</button>
+
+      <!-- POS PANEL -->
+      <div id="posPanel" class="glass rounded-2xl p-5 mb-6 fade-in" style="display:none">
+        <h3 class="text-sm font-bold mb-4">ثبت سفارش دستی (POS)</h3>
+
+        <div class="grid md:grid-cols-2 gap-5">
+          <div>
+            <label class="text-[11px] font-bold block mb-2" style="color:#666">۱) مشتری</label>
+            <input id="posCustSearch" placeholder="جستجو با نام یا شماره..." class="inp w-full mb-2" oninput="renderPosCustomerResults()">
+            <div id="posCustResults" class="max-h-32 overflow-y-auto mb-2"></div>
+            <div id="posSelectedCustBox" class="text-xs p-2.5 rounded-lg mb-2" style="background:#8A999222; display:none"></div>
+            <details class="text-xs">
+              <summary class="cursor-pointer font-bold" style="color:#8A9992">+ مشتری جدید</summary>
+              <div class="grid grid-cols-2 gap-2 mt-2">
+                <input id="posNewName" placeholder="اسم" class="inp">
+                <input id="posNewPhone" placeholder="شماره تماس" class="inp">
+              </div>
+            </details>
+          </div>
+
+          <div>
+            <label class="text-[11px] font-bold block mb-2" style="color:#666">۲) افزودن آیتم</label>
+            <input id="posItemSearch" placeholder="جستجوی آیتم منو..." class="inp w-full mb-2" oninput="renderPosItemResults()">
+            <div id="posItemResults" class="max-h-32 overflow-y-auto"></div>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <label class="text-[11px] font-bold block mb-2" style="color:#666">آیتم‌های سفارش</label>
+          <div id="posCartRoot" class="mb-2"></div>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-3 mt-4">
+          <div>
+            <label class="text-[11px] font-bold block mb-1" style="color:#666">نوع تخفیف</label>
+            <select id="posDiscountType" class="inp w-full" onchange="renderPosCart()">
+              <option value="none">بدون تخفیف</option>
+              <option value="percent">درصدی</option>
+              <option value="fixed">مبلغ ثابت</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] font-bold block mb-1" style="color:#666">مقدار تخفیف</label>
+            <input id="posDiscountValue" type="number" value="0" class="inp w-full" oninput="renderPosCart()">
+          </div>
+          <div>
+            <label class="text-[11px] font-bold block mb-1" style="color:#666">روش پرداخت</label>
+            <select id="posPaymentMethod" class="inp w-full" onchange="renderPosCart()">
+              <option value="cash">نقدی</option>
+              <option value="card">کارت</option>
+              <option value="online">آنلاین</option>
+              <option value="wallet">کیف پول</option>
+              <option value="credit">نسیه</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-3 mt-3">
+          <div>
+            <label class="text-[11px] font-bold block mb-1" style="color:#666">مبلغ پرداخت‌شده</label>
+            <input id="posPaidAmount" type="number" class="inp w-full" oninput="renderPosCart()">
+          </div>
+          <div>
+            <label class="text-[11px] font-bold block mb-1" style="color:#666">وضعیت سفارش</label>
+            <select id="posStatus" class="inp w-full">
+              <option value="pending">در انتظار تایید</option>
+              <option value="confirmed">تایید شد</option>
+              <option value="preparing">در حال آماده‌سازی</option>
+              <option value="done">تحویل داده شد</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-3 mt-3">
+          <textarea id="posNoteCustomer" rows="2" placeholder="توضیحات سفارش (مشتری هم می‌بینه)" class="inp w-full"></textarea>
+          <textarea id="posNoteInternal" rows="2" placeholder="یادداشت داخلی مدیر (فقط خودت می‌بینی)" class="inp w-full"></textarea>
+        </div>
+
+        <div id="posSummaryBox" class="glass-book rounded-xl p-4 mt-4"></div>
+
+        <div class="flex gap-2 mt-4">
+          <button onclick="submitPosOrder()" class="flex-1 py-3 rounded-xl text-sm font-bold text-white" style="background:#2DC653">ثبت سفارش</button>
+          <button onclick="togglePOS()" class="px-5 py-3 rounded-xl text-sm font-bold glass">انصراف</button>
+        </div>
+        <div id="posError" class="text-[11px] mt-2 text-center" style="color:#E2554F"></div>
       </div>
-      <div id="menuAddErr" class="text-[11px] mt-2" style="color:#e2554f"></div>
+
+      <div class="flex gap-2 overflow-x-auto mb-4">
+        <div class="ord-tab tab active whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-f="active">در جریان</div>
+        <div class="ord-tab tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-f="done">تحویل‌شده</div>
+        <div class="ord-tab tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-f="cancelled">لغوشده</div>
+        <div class="ord-tab tab whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold cursor-pointer" data-f="all">همه</div>
+      </div>
+      <div id="ordersRoot" class="grid md:grid-cols-2 gap-3"></div>
     </div>
-    <div id="menuManageRoot"></div>
-  </div>
 
-  <!-- ============ CUSTOMERS / CRM ============ -->
-  <div class="page" id="page-customers">
-    <input id="custSearch" placeholder="جستجوی اسم یا شماره..." class="inp w-full mb-4" oninput="renderCustomers()">
-    <div id="customersRoot"></div>
-  </div>
-
-  <!-- ============ ACCOUNTING ============ -->
-  <div class="page" id="page-accounting">
-    <div class="glass rounded-2xl p-5 mb-5" style="border-color:rgba(138,153,146,.35)">
-      <h3 class="text-sm font-bold mb-3">سود و زیان این ماه</h3>
-      <div class="grid grid-cols-3 gap-2 text-center">
-        <div><div class="text-sm font-extrabold" style="color:#8A9992" id="accIncome">۰</div><div class="text-[9px] text-on-surface-variant mt-1">درآمد</div></div>
-        <div><div class="text-sm font-extrabold" style="color:#e2554f" id="accExpense">۰</div><div class="text-[9px] text-on-surface-variant mt-1">هزینه</div></div>
-        <div><div class="text-sm font-extrabold" id="accNet">۰</div><div class="text-[9px] text-on-surface-variant mt-1">سود خالص</div></div>
+    <!-- ============ MENU ============ -->
+    <div class="page" id="page-menu">
+      <div class="glass rounded-2xl p-5 mb-5">
+        <h3 class="text-sm font-bold mb-3">افزودن آیتم جدید</h3>
+        <div class="grid md:grid-cols-4 gap-2">
+          <input id="newItemCategory" list="catList" placeholder="دسته" class="inp">
+          <datalist id="catList"></datalist>
+          <input id="newItemName" placeholder="اسم آیتم" class="inp">
+          <input id="newItemPrice" type="number" placeholder="قیمت" class="inp">
+          <button onclick="addMenuItem()" class="px-5 py-2 rounded-lg text-xs font-bold text-white" style="background:#8A9992">افزودن</button>
+        </div>
+        <div id="menuAddErr" class="text-[11px] mt-2" style="color:#E2554F"></div>
       </div>
+      <input id="menuSearchAdmin" placeholder="جستجوی آیتم منو..." class="inp w-full mb-4" oninput="renderMenuManage()">
+      <div id="menuManageRoot" class="grid md:grid-cols-2 gap-4"></div>
     </div>
-    <div class="glass rounded-2xl p-4 mb-5">
-      <h3 class="text-sm font-bold mb-3">ثبت هزینهٔ جدید</h3>
-      <div class="grid grid-cols-2 gap-2 mb-2">
-        <select id="expCategory" class="inp">
-          <option>اجاره</option><option>مواد اولیه</option><option>قبض</option><option>حقوق</option><option>تعمیرات</option><option>سایر</option>
-        </select>
-        <input id="expTitle" placeholder="عنوان هزینه" class="inp">
-      </div>
-      <div class="flex gap-2">
-        <input id="expAmount" type="number" placeholder="مبلغ (تومان)" class="inp flex-1">
-        <button onclick="addExpense()" class="px-5 py-2 rounded-lg text-xs font-bold" style="background:#8A9992;color:#22190F">ثبت</button>
-      </div>
+
+    <!-- ============ CUSTOMERS ============ -->
+    <div class="page" id="page-customers">
+      <input id="custSearch" placeholder="جستجوی اسم یا شماره..." class="inp w-full mb-4" oninput="renderCustomers()">
+      <div id="customersRoot" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </div>
-    <div id="expensesRoot"></div>
-  </div>
 
-  <!-- ============ CASH REGISTER ============ -->
-  <div class="page" id="page-cash">
-    <div id="cashCurrentBox" class="glass rounded-2xl p-5 mb-5"></div>
-    <h3 class="text-sm font-bold mb-3 mt-6">تاریخچهٔ شیفت‌ها</h3>
-    <div id="cashHistoryRoot"></div>
-  </div>
-
-  <!-- ============ INVENTORY ============ -->
-  <div class="page" id="page-inventory">
-    <div class="glass rounded-2xl p-4 mb-5">
-      <h3 class="text-sm font-bold mb-3">افزودن مادهٔ اولیه</h3>
-      <div class="grid grid-cols-2 gap-2 mb-2">
-        <input id="ingName" placeholder="اسم ماده" class="inp">
-        <select id="ingUnit" class="inp"><option>کیلوگرم</option><option>لیتر</option><option>عدد</option><option>بسته</option></select>
+    <!-- ============ ACCOUNTING ============ -->
+    <div class="page" id="page-accounting">
+      <div class="glass rounded-2xl p-5 mb-5">
+        <h3 class="text-sm font-bold mb-4">سود و زیان این ماه <span class="text-[10px] font-normal" style="color:#666">(بر اساس <span id="marginLabel2">۳۵</span>٪ سود هر فروش)</span></h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+          <div><div class="text-sm font-extrabold" style="color:#8A9992" id="accIncome">۰</div><div class="text-[9px] mt-1" style="color:#666">درآمد فروش</div></div>
+          <div><div class="text-sm font-extrabold" style="color:#D4A017" id="accGross">۰</div><div class="text-[9px] mt-1" style="color:#666">سود ناخالص</div></div>
+          <div><div class="text-sm font-extrabold" style="color:#E2554F" id="accExpense">۰</div><div class="text-[9px] mt-1" style="color:#666">هزینه</div></div>
+          <div><div class="text-sm font-extrabold" id="accNet">۰</div><div class="text-[9px] mt-1" style="color:#666">سود خالص</div></div>
+        </div>
       </div>
-      <div class="grid grid-cols-2 gap-2">
-        <input id="ingQty" type="number" placeholder="موجودی اولیه" class="inp">
-        <input id="ingMin" type="number" placeholder="حداقل موجودی هشدار" class="inp">
+      <div class="glass rounded-2xl p-4 mb-5" style="border-color:#E2554F55">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold">مجموع بدهی (نسیه) باز</span>
+          <span class="text-sm font-extrabold" style="color:#E2554F" id="totalDebt">۰ ت</span>
+        </div>
       </div>
-      <button onclick="addIngredient()" class="w-full mt-2 py-2 rounded-lg text-xs font-bold" style="background:#8A9992;color:#22190F">افزودن به انبار</button>
+      <div class="glass rounded-2xl p-5 mb-5">
+        <h3 class="text-sm font-bold mb-3">ثبت هزینهٔ جدید</h3>
+        <div class="grid md:grid-cols-4 gap-2">
+          <select id="expCategory" class="inp"><option>اجاره</option><option>مواد اولیه</option><option>قبض</option><option>حقوق</option><option>تعمیرات</option><option>سایر</option></select>
+          <input id="expTitle" placeholder="عنوان هزینه" class="inp">
+          <input id="expAmount" type="number" placeholder="مبلغ (تومان)" class="inp">
+          <button onclick="addExpense()" class="px-5 py-2 rounded-lg text-xs font-bold text-white" style="background:#8A9992">ثبت</button>
+        </div>
+      </div>
+      <div id="expensesRoot" class="grid md:grid-cols-2 gap-3"></div>
     </div>
-    <div id="inventoryRoot"></div>
-  </div>
 
-  <!-- ============ STAFF ============ -->
-  <div class="page" id="page-staff">
-    <div class="glass rounded-2xl p-4 mb-5">
-      <h3 class="text-sm font-bold mb-3">افزودن کارمند</h3>
-      <div class="grid grid-cols-2 gap-2 mb-2">
-        <input id="staffName" placeholder="اسم" class="inp">
-        <select id="staffRole" class="inp"><option>باریستا</option><option>صندوق‌دار</option><option>آشپز/شیرینی‌پز</option><option>مدیر شیفت</option></select>
-      </div>
-      <div class="grid grid-cols-2 gap-2">
-        <input id="staffPhone" placeholder="شماره تماس" class="inp">
-        <input id="staffWage" type="number" placeholder="دستمزد ساعتی (تومان)" class="inp">
-      </div>
-      <button onclick="addStaff()" class="w-full mt-2 py-2 rounded-lg text-xs font-bold" style="background:#8A9992;color:#22190F">افزودن کارمند</button>
+    <!-- ============ CASH ============ -->
+    <div class="page" id="page-cash">
+      <div id="cashCurrentBox" class="glass rounded-2xl p-5 mb-5"></div>
+      <h3 class="text-sm font-bold mb-3 mt-6">تاریخچهٔ شیفت‌ها</h3>
+      <div id="cashHistoryRoot" class="grid md:grid-cols-2 gap-3"></div>
     </div>
-    <div id="staffRoot"></div>
-  </div>
 
-  <!-- ============ SETTINGS ============ -->
-  <div class="page" id="page-settings">
-    <div class="glass rounded-2xl p-5">
-      <h3 class="text-sm font-bold mb-4">اطلاعات کسب‌وکار</h3>
-      <label class="text-[11px] text-on-surface-variant block mb-1">اسم کافه</label>
-      <input id="setBusinessName" class="inp w-full mb-3">
-      <label class="text-[11px] text-on-surface-variant block mb-1">درصد مالیات/عوارض</label>
-      <input id="setTaxPercent" type="number" class="inp w-full mb-3">
-      <label class="text-[11px] text-on-surface-variant block mb-1">واحد پول</label>
-      <input id="setCurrency" class="inp w-full mb-4">
-      <button onclick="saveSettings()" class="w-full py-2.5 rounded-lg text-xs font-bold" style="background:#8A9992;color:#22190F">ذخیره تنظیمات</button>
-      <div id="settingsSaved" class="text-[11px] mt-2 text-center" style="color:#8A9992"></div>
+    <!-- ============ INVENTORY ============ -->
+    <div class="page" id="page-inventory">
+      <div class="glass rounded-2xl p-5 mb-5">
+        <h3 class="text-sm font-bold mb-3">افزودن مادهٔ اولیه</h3>
+        <div class="grid md:grid-cols-4 gap-2">
+          <input id="ingName" placeholder="اسم ماده" class="inp">
+          <select id="ingUnit" class="inp"><option>کیلوگرم</option><option>لیتر</option><option>عدد</option><option>بسته</option></select>
+          <input id="ingQty" type="number" placeholder="موجودی اولیه" class="inp">
+          <input id="ingMin" type="number" placeholder="حداقل هشدار" class="inp">
+        </div>
+        <button onclick="addIngredient()" class="w-full mt-2 py-2 rounded-lg text-xs font-bold text-white" style="background:#8A9992">افزودن به انبار</button>
+      </div>
+      <div id="inventoryRoot" class="grid md:grid-cols-2 gap-3"></div>
     </div>
-  </div>
 
+    <!-- ============ STAFF ============ -->
+    <div class="page" id="page-staff">
+      <div class="glass rounded-2xl p-5 mb-5">
+        <h3 class="text-sm font-bold mb-3">افزودن کارمند</h3>
+        <div class="grid md:grid-cols-4 gap-2">
+          <input id="staffName" placeholder="اسم" class="inp">
+          <select id="staffRole" class="inp"><option>باریستا</option><option>صندوق‌دار</option><option>آشپز/شیرینی‌پز</option><option>مدیر شیفت</option></select>
+          <input id="staffPhone" placeholder="شماره تماس" class="inp">
+          <input id="staffWage" type="number" placeholder="دستمزد ساعتی" class="inp">
+        </div>
+        <button onclick="addStaff()" class="w-full mt-2 py-2 rounded-lg text-xs font-bold text-white" style="background:#8A9992">افزودن کارمند</button>
+      </div>
+      <div id="staffRoot" class="grid md:grid-cols-2 gap-4"></div>
+    </div>
+
+    <!-- ============ SETTINGS ============ -->
+    <div class="page" id="page-settings">
+      <div class="grid md:grid-cols-2 gap-5">
+        <div class="glass rounded-2xl p-5">
+          <h3 class="text-sm font-bold mb-4">اطلاعات کسب‌وکار</h3>
+          <label class="text-[11px] block mb-1" style="color:#666">اسم کافه</label>
+          <input id="setBusinessName" class="inp w-full mb-3">
+          <label class="text-[11px] block mb-1" style="color:#666">درصد مالیات/عوارض</label>
+          <input id="setTaxPercent" type="number" class="inp w-full mb-3">
+          <label class="text-[11px] block mb-1" style="color:#666">واحد پول</label>
+          <input id="setCurrency" class="inp w-full">
+        </div>
+        <div class="glass rounded-2xl p-5">
+          <h3 class="text-sm font-bold mb-4">تنظیمات مالی</h3>
+          <label class="text-[11px] block mb-1" style="color:#666">درصد سود پیش‌فرض فروش</label>
+          <input id="setProfitMargin" type="number" class="inp w-full mb-2">
+          <p class="text-[10px]" style="color:#666">همهٔ گزارش‌های سود ناخالص و سود خالص از همین عدد استفاده می‌کنن.</p>
+        </div>
+      </div>
+      <button onclick="saveSettings()" class="w-full mt-5 py-3 rounded-xl text-sm font-bold text-white" style="background:#8A9992">ذخیره همهٔ تنظیمات</button>
+      <div id="settingsSaved" class="text-[11px] mt-2 text-center" style="color:#2DC653"></div>
+    </div>
+
+  </main>
+</div>
 </div>
 
 <div id="printArea" style="display:none"></div>
@@ -227,6 +375,9 @@
 <script>
 let allOrders = [], currentOrderFilter = 'active', allMenuItems = [];
 let allExpenses = [], allIngredients = [], allStaff = [], allShifts = [], allCustomers = [], currentCashSession = null, allCashSessions = [];
+let profitMarginPercent = 35;
+let posCart = [];
+let posSelectedCustomer = null;
 
 async function checkSession() {
   const { data } = await supabaseClient.auth.getSession();
@@ -250,14 +401,23 @@ function showDashboard() {
   loadOrders(); loadMenuItems(); loadExpenses(); loadIngredients(); loadStaff(); loadCash(); loadCustomers(); loadSettings();
 }
 
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+/* ---------------- sidebar / drawer / page switching ---------------- */
+const PAGE_TITLES = { dashboard:'داشبورد', orders:'سفارش‌ها', menu:'مدیریت منو', customers:'مشتری‌ها (CRM)', accounting:'حسابداری', cash:'صندوق', inventory:'انبار', staff:'کارکنان', settings:'تنظیمات' };
+document.querySelectorAll('.side-link').forEach(link => {
+  link.addEventListener('click', () => {
+    document.querySelectorAll('.side-link').forEach(l => l.classList.remove('active'));
+    link.classList.add('active');
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById('page-' + btn.dataset.p).classList.add('active');
+    const pageEl = document.getElementById('page-' + link.dataset.p);
+    pageEl.classList.add('active');
+    pageEl.classList.remove('fade-in'); void pageEl.offsetWidth; pageEl.classList.add('fade-in');
+    document.getElementById('pageTitle').textContent = PAGE_TITLES[link.dataset.p] || '';
+    closeDrawer();
   });
 });
+function openDrawer(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('drawerOverlay').classList.add('open'); }
+function closeDrawer(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('open'); }
+
 document.querySelectorAll('.ord-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.ord-tab').forEach(t => t.classList.remove('active'));
@@ -276,6 +436,7 @@ async function loadOrders() {
 }
 
 const STATUS_LABEL = { pending:'در انتظار تایید', confirmed:'تایید شد', preparing:'در حال آماده‌سازی', done:'تحویل داده شد', cancelled:'لغو شد' };
+const PAYMENT_LABEL = { cash:'نقدی', card:'کارت', online:'آنلاین', wallet:'کیف پول', credit:'نسیه' };
 
 function renderDashboard() {
   const now = new Date(), todayStr = now.toDateString();
@@ -301,9 +462,9 @@ function renderDashboard() {
   const max = Math.max(...days.map(d=>d.total),1);
   document.getElementById('salesChart').innerHTML = days.map(d => `
     <div class="flex-1 flex flex-col items-center gap-1.5">
-      <div class="text-[9px] text-on-surface-variant">${toFa(d.total)}</div>
+      <div class="text-[9px]" style="color:#666">${toFa(d.total)}</div>
       <div class="bar w-full" style="height:${Math.max(4,(d.total/max)*95)}px"></div>
-      <div class="text-[9px] text-on-surface-variant">${d.label}</div>
+      <div class="text-[9px]" style="color:#666">${d.label}</div>
     </div>`).join('');
 
   const itemCounts = {};
@@ -311,9 +472,9 @@ function renderDashboard() {
   const sorted = Object.entries(itemCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
   const topMax = sorted.length ? sorted[0][1] : 1;
   document.getElementById('topProducts').innerHTML = sorted.length ? sorted.map(([name,qty]) => `
-    <div class="mb-3"><div class="flex justify-between text-xs mb-1"><span>${name}</span><span class="text-on-surface-variant">${toFa(qty)} عدد</span></div>
-    <div class="w-full bg-white/5 rounded-full h-2 overflow-hidden"><div class="h-full" style="width:${(qty/topMax)*100}%; background:#8A9992"></div></div></div>
-  `).join('') : '<div class="text-xs text-on-surface-variant text-center py-4">هنوز داده‌ای نیست</div>';
+    <div class="mb-3"><div class="flex justify-between text-xs mb-1"><span>${name}</span><span style="color:#666">${toFa(qty)} عدد</span></div>
+    <div class="w-full rounded-full h-2 overflow-hidden" style="background:#E5E5E5"><div class="h-full" style="width:${(qty/topMax)*100}%; background:#8A9992"></div></div></div>
+  `).join('') : '<div class="text-xs text-center py-4" style="color:#666">هنوز داده‌ای نیست</div>';
 
   renderPL(month);
 }
@@ -324,27 +485,33 @@ function renderOrders() {
   if (currentOrderFilter === 'active') list = allOrders.filter(o => ['pending','confirmed','preparing'].includes(o.status));
   else if (currentOrderFilter === 'done') list = allOrders.filter(o => o.status === 'done');
   else if (currentOrderFilter === 'cancelled') list = allOrders.filter(o => o.status === 'cancelled');
-  if (list.length === 0) { root.innerHTML = '<div class="text-center text-on-surface-variant text-xs py-10">سفارشی توی این دسته نیست</div>'; return; }
+  if (list.length === 0) { root.innerHTML = '<div class="text-center text-xs py-10 col-span-2" style="color:#666">سفارشی توی این دسته نیست</div>'; return; }
 
-  root.innerHTML = list.map(o => `
-    <div class="glass-book rounded-2xl p-4 mb-3">
+  root.innerHTML = list.map(o => {
+    const debt = (o.payment_method === 'credit' && (o.total - (o.paid_amount||0)) > 0) ? (o.total - (o.paid_amount||0)) : 0;
+    return `
+    <div class="glass-book rounded-2xl p-4">
       <div class="flex justify-between items-center mb-2">
         <span class="text-sm font-bold">سفارش #${toFa(o.id)} · ${STATUS_LABEL[o.status]}</span>
-        <span class="text-[10px] text-on-surface-variant">${new Date(o.created_at).toLocaleString('fa-IR')}</span>
+        <span class="text-[10px]" style="color:#666">${new Date(o.created_at).toLocaleString('fa-IR')}</span>
       </div>
       <div class="text-xs mb-1">${o.order_items.map(it => `${toFa(it.qty)} ${it.item_name}`).join('، ')}</div>
-      ${o.customer_name ? `<div class="text-[11px] mb-1" style="color:#8A9992">👤 ${o.customer_name} — <a href="tel:${o.customer_phone}" class="underline">${o.customer_phone||''}</a></div>` : `<div class="text-[11px] text-on-surface-variant mb-1">👤 مهمان</div>`}
-      ${o.note ? `<div class="text-[11px] mb-2" style="color:#c9a97a">📝 ${o.note}</div>` : ''}
+      ${o.customer_name ? `<div class="text-[11px] mb-1" style="color:#8A9992">👤 ${o.customer_name} — <a href="tel:${o.customer_phone}" class="underline">${o.customer_phone||''}</a></div>` : `<div class="text-[11px] mb-1" style="color:#666">👤 مهمان</div>`}
+      <div class="text-[10px] mb-1" style="color:#666">💳 ${PAYMENT_LABEL[o.payment_method]||'نقدی'}${o.created_by==='admin' ? ' · ثبت‌شده توسط مدیر' : ''}</div>
+      ${o.note ? `<div class="text-[11px] mb-1" style="color:#8A7548">📝 ${o.note}</div>` : ''}
+      ${o.internal_note ? `<div class="text-[11px] mb-2" style="color:#E2554F">🔒 ${o.internal_note}</div>` : ''}
+      ${debt > 0 ? `<div class="text-[11px] mb-2 font-bold" style="color:#E2554F">بدهی باز: ${toFa(debt)} ت</div>` : ''}
       <div class="flex items-center justify-between mt-2">
         <span class="font-bold text-sm" style="color:#8A9992">${toFa(o.total)} ت</span>
-        <div class="flex gap-2">
-          ${o.status==='pending' ? `<button class="act-btn px-3 py-1.5 rounded-lg text-[11px] font-bold" style="background:#8A9992;color:#22190F" data-id="${o.id}" data-s="confirmed">تایید</button>` : ''}
-          ${o.status==='confirmed' ? `<button class="act-btn px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white/10" data-id="${o.id}" data-s="preparing">آماده‌سازی</button>` : ''}
-          ${o.status==='preparing' ? `<button class="act-btn px-3 py-1.5 rounded-lg text-[11px] font-bold" style="background:#2dc653;color:#0e2b16" data-id="${o.id}" data-s="done">تحویل شد</button>` : ''}
-          ${['pending','confirmed','preparing'].includes(o.status) ? `<button class="act-btn px-3 py-1.5 rounded-lg text-[11px] font-bold border" style="color:#e2554f;border-color:rgba(226,85,79,.4)" data-id="${o.id}" data-s="cancelled">لغو</button>` : ''}
+        <div class="flex gap-2 flex-wrap justify-end">
+          ${o.status==='pending' ? `<button class="act-btn px-3 py-1.5 rounded-lg text-[11px] font-bold text-white" style="background:#8A9992" data-id="${o.id}" data-s="confirmed">تایید</button>` : ''}
+          ${o.status==='confirmed' ? `<button class="act-btn px-3 py-1.5 rounded-lg text-[11px] font-bold" style="background:#E5E5E5" data-id="${o.id}" data-s="preparing">آماده‌سازی</button>` : ''}
+          ${o.status==='preparing' ? `<button class="act-btn px-3 py-1.5 rounded-lg text-[11px] font-bold text-white" style="background:#2DC653" data-id="${o.id}" data-s="done">تحویل شد</button>` : ''}
+          ${['pending','confirmed','preparing'].includes(o.status) ? `<button class="act-btn px-3 py-1.5 rounded-lg text-[11px] font-bold border" style="color:#E2554F;border-color:#E2554F55" data-id="${o.id}" data-s="cancelled">لغو</button>` : ''}
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   document.querySelectorAll('.act-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -361,8 +528,8 @@ function exportCSV() {
   if (currentOrderFilter==='active') list = allOrders.filter(o=>['pending','confirmed','preparing'].includes(o.status));
   else if (currentOrderFilter==='done') list = allOrders.filter(o=>o.status==='done');
   else if (currentOrderFilter==='cancelled') list = allOrders.filter(o=>o.status==='cancelled');
-  const rows = [['شماره','تاریخ','آیتم‌ها','مشتری','تماس','وضعیت','مبلغ']];
-  list.forEach(o => rows.push([o.id, new Date(o.created_at).toLocaleString('fa-IR'), o.order_items.map(it=>`${it.qty}x ${it.item_name}`).join(' | '), o.customer_name||'مهمان', o.customer_phone||'', STATUS_LABEL[o.status]||o.status, o.total]));
+  const rows = [['شماره','تاریخ','آیتم‌ها','مشتری','تماس','وضعیت','پرداخت','مبلغ']];
+  list.forEach(o => rows.push([o.id, new Date(o.created_at).toLocaleString('fa-IR'), o.order_items.map(it=>`${it.qty}x ${it.item_name}`).join(' | '), o.customer_name||'مهمان', o.customer_phone||'', STATUS_LABEL[o.status]||o.status, PAYMENT_LABEL[o.payment_method]||'نقدی', o.total]));
   const csv = '\uFEFF' + rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
   const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
@@ -378,6 +545,138 @@ function printOrders() {
   window.print();
 }
 
+/* ================= POS (ثبت سفارش دستی) ================= */
+function togglePOS() {
+  const panel = document.getElementById('posPanel');
+  const show = panel.style.display === 'none';
+  panel.style.display = show ? 'block' : 'none';
+  if (show) {
+    posCart = []; posSelectedCustomer = null;
+    document.getElementById('posCustSearch').value = '';
+    document.getElementById('posItemSearch').value = '';
+    document.getElementById('posSelectedCustBox').style.display = 'none';
+    document.getElementById('posNewName').value = ''; document.getElementById('posNewPhone').value = '';
+    document.getElementById('posDiscountType').value = 'none'; document.getElementById('posDiscountValue').value = 0;
+    document.getElementById('posPaymentMethod').value = 'cash'; document.getElementById('posPaidAmount').value = '';
+    document.getElementById('posStatus').value = 'pending';
+    document.getElementById('posNoteCustomer').value = ''; document.getElementById('posNoteInternal').value = '';
+    document.getElementById('posError').textContent = '';
+    renderPosItemResults(); renderPosCustomerResults(); renderPosCart();
+  }
+}
+function renderPosCustomerResults() {
+  const q = document.getElementById('posCustSearch').value.trim();
+  const box = document.getElementById('posCustResults');
+  if (!q) { box.innerHTML = ''; return; }
+  const matches = allCustomers.filter(c => c.name.indexOf(q)!==-1 || (c.phone||'').indexOf(q)!==-1).slice(0,6);
+  box.innerHTML = matches.map(c => `<div class="text-xs p-2 rounded-lg cursor-pointer hover:bg-black/5" onclick="selectPosCustomer('${c.name.replace(/'/g,"\\'")}','${c.phone}')">${c.name} — ${c.phone}</div>`).join('') || '<div class="text-[11px] p-2" style="color:#666">موردی پیدا نشد — از «مشتری جدید» استفاده کن</div>';
+}
+function selectPosCustomer(name, phone) {
+  posSelectedCustomer = { name, phone };
+  const box = document.getElementById('posSelectedCustBox');
+  box.style.display = 'block';
+  box.innerHTML = `👤 <b>${name}</b> — ${phone} <span onclick="posSelectedCustomer=null; document.getElementById('posSelectedCustBox').style.display='none';" class="cursor-pointer underline" style="color:#E2554F">(تغییر)</span>`;
+  document.getElementById('posCustResults').innerHTML = '';
+  document.getElementById('posCustSearch').value = '';
+}
+function renderPosItemResults() {
+  const q = document.getElementById('posItemSearch').value.trim();
+  const box = document.getElementById('posItemResults');
+  const items = q ? allMenuItems.filter(i => i.name.indexOf(q)!==-1) : allMenuItems.slice(0,8);
+  box.innerHTML = items.map(i => `<div class="flex items-center justify-between text-xs p-2 rounded-lg hover:bg-black/5"><span>${i.name} <span style="color:#666">(${toFa(i.price)} ت)</span></span><button onclick="addToPosCart('${i.name.replace(/'/g,"\\'")}',${i.price})" class="px-2 py-1 rounded text-white text-[10px] font-bold" style="background:#8A9992">افزودن</button></div>`).join('') || '<div class="text-[11px] p-2" style="color:#666">چیزی پیدا نشد</div>';
+}
+function addToPosCart(name, price) {
+  const existing = posCart.find(i => i.name === name);
+  if (existing) existing.qty += 1; else posCart.push({ name, price, qty: 1 });
+  renderPosCart();
+}
+function changePosQty(name, delta) {
+  posCart = posCart.map(i => i.name===name ? { ...i, qty: Math.max(1, i.qty+delta) } : i);
+  renderPosCart();
+}
+function removeFromPosCart(name) { posCart = posCart.filter(i => i.name !== name); renderPosCart(); }
+
+function computePosTotals() {
+  const subtotal = posCart.reduce((s,i)=>s+i.price*i.qty, 0);
+  const discType = document.getElementById('posDiscountType').value;
+  const discVal = Number(document.getElementById('posDiscountValue').value) || 0;
+  let discountAmount = 0, discountPercent = 0;
+  if (discType === 'percent') { discountPercent = discVal; discountAmount = Math.round(subtotal * discVal / 100); }
+  else if (discType === 'fixed') { discountAmount = discVal; }
+  const final = Math.max(0, subtotal - discountAmount);
+  const paid = document.getElementById('posPaidAmount').value === '' ? final : Number(document.getElementById('posPaidAmount').value);
+  const remaining = Math.max(0, final - paid);
+  return { subtotal, discountAmount, discountPercent, final, paid, remaining };
+}
+function renderPosCart() {
+  const root = document.getElementById('posCartRoot');
+  if (posCart.length === 0) { root.innerHTML = '<div class="text-xs text-center py-4" style="color:#666">هنوز آیتمی اضافه نشده</div>'; }
+  else {
+    root.innerHTML = posCart.map(i => `
+      <div class="flex items-center justify-between text-xs glass-book rounded-lg p-2.5 mb-1.5">
+        <span>${i.name}</span>
+        <div class="flex items-center gap-2">
+          <button onclick="changePosQty('${i.name.replace(/'/g,"\\'")}',-1)" class="w-6 h-6 rounded" style="background:#E5E5E5">−</button>
+          <span class="font-bold">${toFa(i.qty)}</span>
+          <button onclick="changePosQty('${i.name.replace(/'/g,"\\'")}',1)" class="w-6 h-6 rounded" style="background:#E5E5E5">+</button>
+          <span class="font-bold" style="color:#8A9992">${toFa(i.price*i.qty)} ت</span>
+          <button onclick="removeFromPosCart('${i.name.replace(/'/g,"\\'")}')" style="color:#E2554F">✕</button>
+        </div>
+      </div>`).join('');
+  }
+  if (document.getElementById('posPaidAmount').value === '') {
+    // keep paid amount auto-synced to final unless user typed something
+  }
+  const t = computePosTotals();
+  document.getElementById('posSummaryBox').innerHTML = `
+    <div class="flex justify-between text-xs mb-1"><span style="color:#666">جمع جزء</span><span>${toFa(t.subtotal)} ت</span></div>
+    <div class="flex justify-between text-xs mb-1"><span style="color:#666">تخفیف</span><span style="color:#E2554F">${t.discountAmount>0?'−':''}${toFa(t.discountAmount)} ت</span></div>
+    <div class="flex justify-between text-sm font-bold mt-2 pt-2" style="border-top:1px dashed #E5E5E5"><span>مبلغ نهایی</span><span style="color:#8A9992">${toFa(t.final)} ت</span></div>
+    ${t.remaining > 0 ? `<div class="flex justify-between text-xs mt-1 font-bold" style="color:#E2554F"><span>مبلغ باقیمانده (بدهی)</span><span>${toFa(t.remaining)} ت</span></div>` : ''}
+  `;
+}
+
+async function submitPosOrder() {
+  const errBox = document.getElementById('posError');
+  errBox.textContent = '';
+  if (posCart.length === 0) { errBox.textContent = 'حداقل یک آیتم اضافه کن'; return; }
+
+  let customer = posSelectedCustomer;
+  const newName = document.getElementById('posNewName').value.trim();
+  const newPhone = document.getElementById('posNewPhone').value.trim();
+  if (!customer && newName && newPhone) {
+    const { data: existing } = await supabaseClient.from('customers').select('*').eq('phone', newPhone).limit(1);
+    if (!existing || existing.length === 0) {
+      await supabaseClient.from('customers').insert({ name: newName, phone: newPhone });
+    }
+    customer = { name: newName, phone: newPhone };
+  }
+
+  const t = computePosTotals();
+  const payment_method = document.getElementById('posPaymentMethod').value;
+  const status = document.getElementById('posStatus').value;
+  const noteCustomer = document.getElementById('posNoteCustomer').value.trim() || null;
+  const noteInternal = document.getElementById('posNoteInternal').value.trim() || null;
+
+  const { data: order, error } = await supabaseClient.from('orders').insert({
+    device_id: 'admin-pos',
+    customer_name: customer ? customer.name : null,
+    customer_phone: customer ? customer.phone : null,
+    total: t.final, discount_amount: t.discountAmount, discount_percent: t.discountPercent,
+    payment_method, paid_amount: t.paid, note: noteCustomer, internal_note: noteInternal,
+    status, created_by: 'admin'
+  }).select().single();
+
+  if (error) { errBox.textContent = 'خطا در ثبت سفارش'; console.error(error); return; }
+
+  const orderItems = posCart.map(i => ({ order_id: order.id, item_name: i.name, price: i.price, qty: i.qty }));
+  const { error: itemsErr } = await supabaseClient.from('order_items').insert(orderItems);
+  if (itemsErr) console.error(itemsErr);
+
+  togglePOS();
+  loadOrders(); loadCustomers();
+}
+
 /* ================= MENU ================= */
 async function loadMenuItems() {
   const { data, error } = await supabaseClient.from('menu_items').select('*').order('category').order('sort_order');
@@ -388,17 +687,19 @@ async function loadMenuItems() {
 }
 function renderMenuManage() {
   const root = document.getElementById('menuManageRoot');
+  const q = (document.getElementById('menuSearchAdmin')?.value || '').trim();
+  const filtered = q ? allMenuItems.filter(i => i.name.indexOf(q)!==-1) : allMenuItems;
   const byCat = {};
-  allMenuItems.forEach(i => { (byCat[i.category]=byCat[i.category]||[]).push(i); });
+  filtered.forEach(i => { (byCat[i.category]=byCat[i.category]||[]).push(i); });
   root.innerHTML = Object.entries(byCat).map(([cat,items]) => `
-    <div class="mb-5"><h4 class="text-xs font-bold mb-2 text-on-surface-variant">${cat}</h4>
+    <div><h4 class="text-xs font-bold mb-2" style="color:#666">${cat}</h4>
     ${items.map(item => `
       <div class="glass-book rounded-xl p-3 mb-2 flex items-center gap-2">
         <input value="${item.name}" data-id="${item.id}" data-field="name" class="menu-field flex-1 inp">
         <input type="number" value="${item.price}" data-id="${item.id}" data-field="price" class="menu-field w-20 inp">
-        <label class="flex items-center gap-1 text-[10px] text-on-surface-variant flex-shrink-0"><input type="checkbox" ${item.is_available?'checked':''} data-id="${item.id}" class="menu-avail">فعال</label>
-        <button onclick="deleteMenuItem(${item.id})" class="text-[11px] px-2 py-1.5 rounded-lg flex-shrink-0" style="color:#e2554f">حذف</button>
-      </div>`).join('')}</div>`).join('');
+        <label class="flex items-center gap-1 text-[10px] flex-shrink-0" style="color:#666"><input type="checkbox" ${item.is_available?'checked':''} data-id="${item.id}" class="menu-avail">فعال</label>
+        <button onclick="deleteMenuItem(${item.id})" class="text-[11px] px-2 py-1.5 rounded-lg flex-shrink-0" style="color:#E2554F">حذف</button>
+      </div>`).join('')}</div>`).join('') || '<div class="text-xs col-span-2 text-center py-6" style="color:#666">چیزی پیدا نشد</div>';
   document.querySelectorAll('.menu-field').forEach(el => el.addEventListener('change', async () => {
     const field = el.dataset.field; const value = field==='price' ? Number(el.value) : el.value;
     const { error } = await supabaseClient.from('menu_items').update({ [field]: value }).eq('id', el.dataset.id);
@@ -437,36 +738,46 @@ async function loadCustomers() {
 }
 function tierFor(orderCount) {
   if (orderCount >= 20) return { label:'الماس', color:'#8A9992' };
-  if (orderCount >= 10) return { label:'طلایی', color:'#d4a017' };
-  if (orderCount >= 4) return { label:'نقره‌ای', color:'#c0c0c0' };
+  if (orderCount >= 10) return { label:'طلایی', color:'#D4A017' };
+  if (orderCount >= 4) return { label:'نقره‌ای', color:'#9a9a9a' };
   return { label:'برنزی', color:'#c98a4b' };
 }
 function renderCustomers() {
   const root = document.getElementById('customersRoot');
   const q = (document.getElementById('custSearch')?.value || '').trim();
+  let totalDebtAll = 0;
   let list = allCustomers.map(c => {
     const orders = allOrders.filter(o => o.customer_phone === c.phone && o.status !== 'cancelled');
-    return { ...c, orderCount: orders.length, totalSpent: orders.reduce((s,o)=>s+o.total,0), points: orders.length*5 };
+    const debt = orders.filter(o=>o.payment_method==='credit').reduce((s,o)=>s+Math.max(0,o.total-(o.paid_amount||0)),0);
+    totalDebtAll += debt;
+    const lastOrder = orders.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+    return { ...c, orderCount: orders.length, totalSpent: orders.reduce((s,o)=>s+o.total,0), points: orders.length*5, debt,
+      avgSpent: orders.length ? Math.round(orders.reduce((s,o)=>s+o.total,0)/orders.length) : 0,
+      lastVisit: lastOrder ? new Date(lastOrder.created_at).toLocaleDateString('fa-IR') : '—' };
   });
+  const debtEl = document.getElementById('totalDebt'); if (debtEl) debtEl.textContent = toFa(totalDebtAll) + ' ت';
+
   if (q) list = list.filter(c => c.name.indexOf(q)!==-1 || (c.phone||'').indexOf(q)!==-1);
   list.sort((a,b) => b.totalSpent - a.totalSpent);
-
-  if (list.length === 0) { root.innerHTML = '<div class="text-center text-on-surface-variant text-xs py-10">مشتری‌ای پیدا نشد</div>'; return; }
+  if (list.length === 0) { root.innerHTML = '<div class="text-center text-xs py-10 col-span-3" style="color:#666">مشتری‌ای پیدا نشد</div>'; return; }
 
   root.innerHTML = list.map(c => {
     const tier = tierFor(c.orderCount);
     return `
-    <div class="glass-book rounded-2xl p-4 mb-3">
+    <div class="glass-book rounded-2xl p-4">
       <div class="flex justify-between items-center mb-2">
         <span class="text-sm font-bold">${c.name}</span>
         <span class="text-[10px] px-2 py-1 rounded-full font-bold" style="background:${tier.color}22; color:${tier.color}">${tier.label}</span>
       </div>
-      <div class="text-[11px] text-on-surface-variant mb-2"><a href="tel:${c.phone}" class="underline">${c.phone}</a></div>
-      <div class="grid grid-cols-3 gap-2 text-center">
-        <div><div class="text-xs font-bold">${toFa(c.orderCount)}</div><div class="text-[9px] text-on-surface-variant">سفارش</div></div>
-        <div><div class="text-xs font-bold" style="color:#8A9992">${toFa(c.totalSpent)}</div><div class="text-[9px] text-on-surface-variant">مجموع خرید</div></div>
-        <div><div class="text-xs font-bold">${toFa(c.points)}</div><div class="text-[9px] text-on-surface-variant">امتیاز</div></div>
+      <div class="text-[11px] mb-2" style="color:#666"><a href="tel:${c.phone}" class="underline">${c.phone}</a> · عضو از ${new Date(c.created_at).toLocaleDateString('fa-IR')}</div>
+      <div class="grid grid-cols-2 gap-2 text-center mb-2">
+        <div><div class="text-xs font-bold">${toFa(c.orderCount)}</div><div class="text-[9px]" style="color:#666">سفارش</div></div>
+        <div><div class="text-xs font-bold" style="color:#8A9992">${toFa(c.totalSpent)}</div><div class="text-[9px]" style="color:#666">مجموع خرید</div></div>
+        <div><div class="text-xs font-bold">${toFa(c.avgSpent)}</div><div class="text-[9px]" style="color:#666">میانگین خرید</div></div>
+        <div><div class="text-xs font-bold">${toFa(c.points)}</div><div class="text-[9px]" style="color:#666">امتیاز</div></div>
       </div>
+      <div class="text-[10px]" style="color:#666">آخرین خرید: ${c.lastVisit}</div>
+      ${c.debt > 0 ? `<div class="text-[11px] font-bold mt-2" style="color:#E2554F">بدهی باز: ${toFa(c.debt)} ت</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -480,26 +791,25 @@ async function loadExpenses() {
 }
 function renderPL(monthOrders) {
   const income = monthOrders.reduce((s,o)=>s+o.total,0);
+  const grossProfit = Math.round(income * profitMarginPercent / 100);
   const now = new Date(); const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthExpenses = allExpenses.filter(e => new Date(e.expense_date) >= monthStart).reduce((s,e)=>s+e.amount,0);
-  const net = income - monthExpenses;
+  const net = grossProfit - monthExpenses;
   ['plIncome','accIncome'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent = toFa(income)+' ت'; });
+  ['plGross','accGross'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent = toFa(grossProfit)+' ت'; });
   ['plExpense','accExpense'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent = toFa(monthExpenses)+' ت'; });
-  ['plNet','accNet'].forEach(id => { const el=document.getElementById(id); if(el){ el.textContent = toFa(net)+' ت'; el.style.color = net>=0 ? '#2dc653' : '#e2554f'; } });
+  ['plNet','accNet'].forEach(id => { const el=document.getElementById(id); if(el){ el.textContent = toFa(net)+' ت'; el.style.color = net>=0 ? '#2DC653' : '#E2554F'; } });
+  ['marginLabel1','marginLabel2'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent = toFa(profitMarginPercent); });
 }
 function renderExpenses() {
   const root = document.getElementById('expensesRoot');
-  if (allExpenses.length === 0) { root.innerHTML = '<div class="text-center text-on-surface-variant text-xs py-10">هنوز هزینه‌ای ثبت نشده</div>'; return; }
+  if (allExpenses.length === 0) { root.innerHTML = '<div class="text-center text-xs py-10 col-span-2" style="color:#666">هنوز هزینه‌ای ثبت نشده</div>'; return; }
   root.innerHTML = allExpenses.map(e => `
-    <div class="glass-book rounded-xl p-3 mb-2 flex items-center justify-between">
-      <div>
-        <div class="text-xs font-bold">${e.title} <span class="text-on-surface-variant font-normal">— ${e.category}</span></div>
-        <div class="text-[10px] text-on-surface-variant mt-1">${new Date(e.expense_date).toLocaleDateString('fa-IR')}</div>
-      </div>
-      <div class="flex items-center gap-3">
-        <span class="text-xs font-bold" style="color:#e2554f">${toFa(e.amount)} ت</span>
-        <button onclick="deleteExpense(${e.id})" class="text-[11px]" style="color:#e2554f">حذف</button>
-      </div>
+    <div class="glass-book rounded-xl p-3 flex items-center justify-between">
+      <div><div class="text-xs font-bold">${e.title} <span style="color:#666" class="font-normal">— ${e.category}</span></div>
+      <div class="text-[10px] mt-1" style="color:#666">${new Date(e.expense_date).toLocaleDateString('fa-IR')}</div></div>
+      <div class="flex items-center gap-3"><span class="text-xs font-bold" style="color:#E2554F">${toFa(e.amount)} ت</span>
+      <button onclick="deleteExpense(${e.id})" class="text-[11px]" style="color:#E2554F">حذف</button></div>
     </div>`).join('');
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   const month = allOrders.filter(o => o.status!=='cancelled' && new Date(o.created_at) >= monthStart);
@@ -538,24 +848,22 @@ function todayCashExpected(openingAmount) {
 function renderCash() {
   const box = document.getElementById('cashCurrentBox');
   if (!currentCashSession) {
-    box.innerHTML = `
-      <h3 class="text-sm font-bold mb-3">شروع شیفت صندوق</h3>
-      <input id="openingAmount" type="number" placeholder="مبلغ نقد اول شیفت (تومان)" class="inp w-full mb-3">
-      <button onclick="openCash()" class="w-full py-2.5 rounded-lg text-xs font-bold" style="background:#8A9992;color:#22190F">باز کردن صندوق</button>`;
+    box.innerHTML = `<h3 class="text-sm font-bold mb-3">شروع شیفت صندوق</h3>
+      <input id="openingAmount" type="number" placeholder="مبلغ نقد اول شیفت" class="inp w-full mb-3">
+      <button onclick="openCash()" class="w-full py-2.5 rounded-lg text-xs font-bold text-white" style="background:#8A9992">باز کردن صندوق</button>`;
   } else {
     const expected = todayCashExpected(currentCashSession.opening_amount);
-    box.innerHTML = `
-      <h3 class="text-sm font-bold mb-3">صندوق باز است — از ${new Date(currentCashSession.opened_at).toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'})}</h3>
-      <div class="text-xs text-on-surface-variant mb-3">مبلغ اولیه: ${toFa(currentCashSession.opening_amount)} ت · فروش تحویل‌شدهٔ امروز اضافه میشه</div>
+    box.innerHTML = `<h3 class="text-sm font-bold mb-3">صندوق باز است — از ${new Date(currentCashSession.opened_at).toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'})}</h3>
+      <div class="text-xs mb-3" style="color:#666">مبلغ اولیه: ${toFa(currentCashSession.opening_amount)} ت</div>
       <div class="text-sm font-bold mb-3">مبلغ مورد انتظار الان: <span style="color:#8A9992">${toFa(expected)} ت</span></div>
       <input id="countedAmount" type="number" placeholder="مبلغ شمرده‌شدهٔ واقعی" class="inp w-full mb-3">
-      <button onclick="closeCash()" class="w-full py-2.5 rounded-lg text-xs font-bold" style="background:#e2554f;color:#fff">بستن صندوق</button>`;
+      <button onclick="closeCash()" class="w-full py-2.5 rounded-lg text-xs font-bold text-white" style="background:#E2554F">بستن صندوق</button>`;
   }
   document.getElementById('cashHistoryRoot').innerHTML = allCashSessions.filter(s=>s.status==='closed').map(s => `
-    <div class="glass-book rounded-xl p-3 mb-2">
-      <div class="flex justify-between text-xs mb-1"><span>${new Date(s.opened_at).toLocaleDateString('fa-IR')}</span><span class="${s.difference<0?'':''}" style="color:${s.difference===0?'#2dc653':(s.difference<0?'#e2554f':'#d4a017')}">${s.difference===0?'مطابقت داشت':(s.difference>0?'+':'')+toFa(s.difference)+' ت اختلاف'}</span></div>
-      <div class="text-[10px] text-on-surface-variant">اولیه: ${toFa(s.opening_amount)} ت · انتظار: ${toFa(s.expected_amount)} ت · شمرده‌شده: ${toFa(s.counted_amount)} ت</div>
-    </div>`).join('') || '<div class="text-center text-on-surface-variant text-xs py-6">هنوز شیفتی بسته نشده</div>';
+    <div class="glass-book rounded-xl p-3">
+      <div class="flex justify-between text-xs mb-1"><span>${new Date(s.opened_at).toLocaleDateString('fa-IR')}</span><span style="color:${s.difference===0?'#2DC653':(s.difference<0?'#E2554F':'#D4A017')}">${s.difference===0?'مطابقت داشت':(s.difference>0?'+':'')+toFa(s.difference)+' ت'}</span></div>
+      <div class="text-[10px]" style="color:#666">اولیه: ${toFa(s.opening_amount)} · انتظار: ${toFa(s.expected_amount)} · شمرده: ${toFa(s.counted_amount)}</div>
+    </div>`).join('') || '<div class="text-center text-xs py-6 col-span-2" style="color:#666">هنوز شیفتی بسته نشده</div>';
 }
 async function openCash() {
   const opening = Number(document.getElementById('openingAmount').value) || 0;
@@ -567,9 +875,7 @@ async function closeCash() {
   const counted = Number(document.getElementById('countedAmount').value) || 0;
   const expected = todayCashExpected(currentCashSession.opening_amount);
   const diff = counted - expected;
-  const { error } = await supabaseClient.from('cash_sessions').update({
-    status: 'closed', closed_at: new Date().toISOString(), expected_amount: expected, counted_amount: counted, difference: diff
-  }).eq('id', currentCashSession.id);
+  const { error } = await supabaseClient.from('cash_sessions').update({ status:'closed', closed_at:new Date().toISOString(), expected_amount:expected, counted_amount:counted, difference:diff }).eq('id', currentCashSession.id);
   if (error) { alert('خطا'); console.error(error); return; }
   loadCash();
 }
@@ -583,19 +889,21 @@ async function loadIngredients() {
 }
 function renderInventory() {
   const root = document.getElementById('inventoryRoot');
-  if (allIngredients.length === 0) { root.innerHTML = '<div class="text-center text-on-surface-variant text-xs py-10">هنوز مادهٔ اولیه‌ای ثبت نشده</div>'; return; }
+  if (allIngredients.length === 0) { root.innerHTML = '<div class="text-center text-xs py-10 col-span-2" style="color:#666">هنوز مادهٔ اولیه‌ای ثبت نشده</div>'; return; }
   root.innerHTML = allIngredients.map(i => {
     const low = Number(i.quantity) <= Number(i.min_threshold);
+    const pct = i.min_threshold > 0 ? Math.min(100, Math.round((i.quantity/(i.min_threshold*2))*100)) : 100;
     return `
-    <div class="glass-book rounded-xl p-3 mb-2 ${low?'low-stock':''}">
+    <div class="glass-book rounded-xl p-3 ${low?'low-stock':''}">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-bold">${i.name} ${low?'<span style="color:#e2554f">⚠️ موجودی کم</span>':''}</span>
-        <span class="text-[10px] text-on-surface-variant">${i.unit}</span>
+        <span class="text-xs font-bold">${i.name} ${low?'<span style="color:#E2554F">⚠️ کم</span>':''}</span>
+        <span class="text-[10px]" style="color:#666">آخرین بروزرسانی: ${new Date(i.updated_at).toLocaleDateString('fa-IR')}</span>
       </div>
+      <div class="w-full rounded-full h-1.5 overflow-hidden mb-2" style="background:#E5E5E5"><div class="h-full" style="width:${pct}%; background:${low?'#E2554F':'#8A9992'}"></div></div>
       <div class="flex items-center gap-2">
         <input type="number" value="${i.quantity}" data-id="${i.id}" class="ing-qty inp flex-1" step="0.1">
-        <span class="text-[10px] text-on-surface-variant">حداقل: ${i.min_threshold}</span>
-        <button onclick="deleteIngredient(${i.id})" class="text-[11px]" style="color:#e2554f">حذف</button>
+        <span class="text-[10px]" style="color:#666">${i.unit} · حداقل ${i.min_threshold}</span>
+        <button onclick="deleteIngredient(${i.id})" class="text-[11px]" style="color:#E2554F">حذف</button>
       </div>
     </div>`;
   }).join('');
@@ -628,25 +936,28 @@ async function loadStaff() {
   const { data, error } = await supabaseClient.from('staff').select('*').order('created_at', { ascending: false });
   if (error) { console.error(error); return; }
   allStaff = data || [];
-  const { data: shiftData } = await supabaseClient.from('shifts').select('*').order('clock_in', { ascending: false }).limit(100);
+  const { data: shiftData } = await supabaseClient.from('shifts').select('*').order('clock_in', { ascending: false }).limit(200);
   allShifts = shiftData || [];
   renderStaff();
 }
 function renderStaff() {
   const root = document.getElementById('staffRoot');
-  if (allStaff.length === 0) { root.innerHTML = '<div class="text-center text-on-surface-variant text-xs py-10">هنوز کارمندی ثبت نشده</div>'; return; }
+  if (allStaff.length === 0) { root.innerHTML = '<div class="text-center text-xs py-10 col-span-2" style="color:#666">هنوز کارمندی ثبت نشده</div>'; return; }
   root.innerHTML = allStaff.map(s => {
     const openShift = allShifts.find(sh => sh.staff_id === s.id && !sh.clock_out);
+    const myShifts = allShifts.filter(sh => sh.staff_id === s.id && sh.clock_out);
+    const totalHours = myShifts.reduce((sum,sh) => sum + (new Date(sh.clock_out)-new Date(sh.clock_in))/3600000, 0);
     return `
-    <div class="glass-book rounded-2xl p-4 mb-3">
+    <div class="glass-book rounded-2xl p-4">
       <div class="flex justify-between items-center mb-2">
-        <span class="text-sm font-bold">${s.name}</span>
-        <span class="text-[10px] px-2 py-1 rounded-full bg-white/10">${s.role}</span>
+        <span class="text-sm font-bold">${s.name} ${openShift ? '<span style=\"color:#2DC653\">● آنلاین</span>' : ''}</span>
+        <span class="text-[10px] px-2 py-1 rounded-full" style="background:#E5E5E5">${s.role}</span>
       </div>
-      <div class="text-[11px] text-on-surface-variant mb-3">${s.phone||''} · دستمزد ساعتی: ${toFa(s.hourly_wage)} ت</div>
+      <div class="text-[11px] mb-1" style="color:#666">${s.phone||''} · دستمزد ساعتی: ${toFa(s.hourly_wage)} ت</div>
+      <div class="text-[11px] mb-3" style="color:#666">مجموع ساعات کاری (تاریخچه): ${toFa(Math.round(totalHours))} ساعت</div>
       ${openShift
-        ? `<div class="flex items-center justify-between"><span class="text-[11px]" style="color:#8A9992">در حال کار — از ${new Date(openShift.clock_in).toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'})}</span><button onclick="clockOut(${openShift.id})" class="px-3 py-1.5 rounded-lg text-[11px] font-bold" style="background:#e2554f;color:#fff">پایان شیفت</button></div>`
-        : `<button onclick="clockIn(${s.id})" class="w-full py-2 rounded-lg text-[11px] font-bold" style="background:#8A9992;color:#22190F">شروع شیفت</button>`}
+        ? `<div class="flex items-center justify-between"><span class="text-[11px]" style="color:#8A9992">از ${new Date(openShift.clock_in).toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'})}</span><button onclick="clockOut(${openShift.id})" class="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white" style="background:#E2554F">پایان شیفت</button></div>`
+        : `<button onclick="clockIn(${s.id})" class="w-full py-2 rounded-lg text-[11px] font-bold text-white" style="background:#8A9992">شروع شیفت</button>`}
     </div>`;
   }).join('');
 }
@@ -680,20 +991,25 @@ async function loadSettings() {
   document.getElementById('setBusinessName').value = map.business_name || '';
   document.getElementById('setTaxPercent').value = map.tax_percent || '';
   document.getElementById('setCurrency').value = map.currency_label || '';
+  document.getElementById('setProfitMargin').value = map.profit_margin_percent || '35';
+  profitMarginPercent = Number(map.profit_margin_percent) || 35;
 }
 async function saveSettings() {
   const updates = [
     { key:'business_name', value: document.getElementById('setBusinessName').value.trim() },
     { key:'tax_percent', value: document.getElementById('setTaxPercent').value.trim() },
-    { key:'currency_label', value: document.getElementById('setCurrency').value.trim() }
+    { key:'currency_label', value: document.getElementById('setCurrency').value.trim() },
+    { key:'profit_margin_percent', value: document.getElementById('setProfitMargin').value.trim() || '35' }
   ];
   for (const u of updates) {
     const { error } = await supabaseClient.from('settings').upsert(u);
-    if (error) { console.error(error); }
+    if (error) console.error(error);
   }
+  profitMarginPercent = Number(document.getElementById('setProfitMargin').value) || 35;
   const msg = document.getElementById('settingsSaved');
   msg.textContent = 'ذخیره شد ✓';
   setTimeout(() => { msg.textContent = ''; }, 2000);
+  loadOrders();
 }
 
 checkSession();

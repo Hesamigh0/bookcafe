@@ -8,6 +8,8 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="config.js"></script>
 <script>
   tailwind.config = { theme: { extend: { colors: {
@@ -60,6 +62,7 @@
   .page{ display:none; }
   .page.active{ display:block; }
 
+  .pdf-source{ position:absolute; top:0; left:-99999px; width:820px; background:#fff; }
   @media print {
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     body *{ visibility:hidden; }
@@ -120,6 +123,15 @@
 
     <!-- ============ DASHBOARD ============ -->
     <div class="page active fade-in" id="page-dashboard">
+      <div class="glass rounded-2xl p-5 mb-5" style="background:linear-gradient(135deg,#2E2E2E,#1c2420); border:none;">
+        <h3 class="text-sm font-bold mb-4 text-white">📈 از ابتدا تاکنون</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+          <div><div class="text-lg font-extrabold text-white" id="allTimeOrders">۰</div><div class="text-[10px] mt-1" style="color:#ccc">تعداد کل سفارش</div></div>
+          <div><div class="text-lg font-extrabold" style="color:#8A9992" id="allTimeRevenue">۰ ت</div><div class="text-[10px] mt-1" style="color:#ccc">فروش کل</div></div>
+          <div><div class="text-lg font-extrabold" style="color:#D4A017" id="allTimeGross">۰ ت</div><div class="text-[10px] mt-1" style="color:#ccc">سود ناخالص کل</div></div>
+          <div><div class="text-lg font-extrabold" style="color:#2DC653" id="allTimeNet">۰ ت</div><div class="text-[10px] mt-1" style="color:#ccc">سود خالص کل</div></div>
+        </div>
+      </div>
       <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-5">
         <div class="glass rounded-2xl p-5 text-center"><div class="text-xl font-extrabold" style="color:#8A9992" id="statToday">۰ ت</div><div class="text-[11px] mt-1" style="color:#666">فروش امروز</div></div>
         <div class="glass rounded-2xl p-5 text-center"><div class="text-xl font-extrabold" style="color:#8A9992" id="statWeek">۰ ت</div><div class="text-[11px] mt-1" style="color:#666">فروش هفته</div></div>
@@ -394,13 +406,33 @@
 </div>
 </div>
 
-<div id="printArea" style="display:none"></div>
+<div id="printArea" class="pdf-source"></div>
 
 <script>
 let allOrders = [], currentOrderFilter = 'active', allMenuItems = [];
 function toLocalDateTimeInputValue(d) {
   const pad = n => String(n).padStart(2,'0');
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+async function downloadElementAsPDF(filename) {
+  const el = document.getElementById('printArea');
+  const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+  const imgData = canvas.toDataURL('image/jpeg', 0.95);
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const pageWidth = 210, pageHeight = 297;
+  const imgWidth = pageWidth;
+  const imgHeight = canvas.height * imgWidth / canvas.width;
+  let heightLeft = imgHeight, position = 0;
+  pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+  heightLeft -= pageHeight;
+  while (heightLeft > 0) {
+    position = heightLeft - imgHeight;
+    pdf.addPage();
+    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+  }
+  pdf.save(filename);
 }
 let allExpenses = [], allIngredients = [], allStaff = [], allShifts = [], allCustomers = [], currentCashSession = null, allCashSessions = [];
 let profitMarginPercent = 35;
@@ -543,6 +575,7 @@ function renderOrders() {
           ${o.status==='confirmed' ? `<button class="act-btn px-3 py-1.5 rounded-lg text-[11px] font-bold" style="background:#E5E5E5" data-id="${o.id}" data-s="preparing">آماده‌سازی</button>` : ''}
           ${o.status==='preparing' ? `<button class="act-btn px-3 py-1.5 rounded-lg text-[11px] font-bold text-white" style="background:#2DC653" data-id="${o.id}" data-s="done">تحویل شد</button>` : ''}
           ${['pending','confirmed','preparing'].includes(o.status) ? `<button class="act-btn px-3 py-1.5 rounded-lg text-[11px] font-bold border" style="color:#E2554F;border-color:#E2554F55" data-id="${o.id}" data-s="cancelled">لغو</button>` : ''}
+          <button class="del-btn px-3 py-1.5 rounded-lg text-[11px] font-bold" style="background:#E2554F; color:#fff" data-id="${o.id}">🗑 حذف</button>
         </div>
       </div>
     </div>`;
@@ -553,6 +586,15 @@ function renderOrders() {
       btn.disabled = true;
       const { error } = await supabaseClient.from('orders').update({ status: btn.dataset.s }).eq('id', btn.dataset.id);
       if (error) { alert('خطا'); console.error(error); return; }
+      await loadOrders();
+    });
+  });
+  document.querySelectorAll('.del-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('این سفارش کامل حذف بشه؟ این کار برگشت‌ناپذیره.')) return;
+      btn.disabled = true;
+      const { error } = await supabaseClient.from('orders').delete().eq('id', btn.dataset.id);
+      if (error) { alert('خطا در حذف سفارش'); console.error(error); return; }
       await loadOrders();
     });
   });
@@ -567,7 +609,7 @@ function currentFilteredOrders() {
 
 const FILTER_LABEL = { active:'سفارش‌های در جریان', done:'سفارش‌های تحویل‌شده', cancelled:'سفارش‌های لغوشده', all:'همهٔ سفارش‌ها' };
 
-function exportPDF() {
+async function exportPDF() {
   const list = currentFilteredOrders();
   const totalRevenue = list.filter(o=>o.status!=='cancelled').reduce((s,o)=>s+o.total,0);
   const totalItems = list.reduce((s,o)=>s+o.order_items.reduce((a,it)=>a+it.qty,0),0);
@@ -631,11 +673,11 @@ function exportPDF() {
         تولید شده توسط پنل مدیریت کافه کتاب — bookcafe1.ir
       </div>
     </div>`;
-  window.print();
+  await downloadElementAsPDF('گزارش-سفارش‌ها-' + new Date().toISOString().slice(0,10) + '.pdf');
 }
 
 /* ================= CUSTOM DATE-RANGE REPORT ================= */
-function exportRangePDF() {
+async function exportRangePDF() {
   const fromVal = document.getElementById('rangeFrom').value;
   const toVal = document.getElementById('rangeTo').value;
   if (!fromVal || !toVal) { alert('اول تاریخ شروع و پایان رو انتخاب کن'); return; }
@@ -730,7 +772,7 @@ function exportRangePDF() {
         تولید شده توسط پنل مدیریت کافه کتاب — bookcafe1.ir
       </div>
     </div>`;
-  window.print();
+  await downloadElementAsPDF('گزارش-مالی-' + fromVal + '-تا-' + toVal + '.pdf');
 }
 
 /* ================= DEBT (نسیه) LOOKUP ================= */
@@ -1231,6 +1273,20 @@ async function loadSettings() {
   document.getElementById('setCurrency').value = map.currency_label || '';
   document.getElementById('setProfitMargin').value = map.profit_margin_percent || '35';
   profitMarginPercent = Number(map.profit_margin_percent) || 35;
+  loadAllTimeStats();
+}
+async function loadAllTimeStats() {
+  const { data, error } = await supabaseClient.from('orders').select('total,status').neq('status','cancelled');
+  if (error) { console.error(error); return; }
+  const income = data.reduce((s,o)=>s+o.total,0);
+  const gross = Math.round(income * profitMarginPercent / 100);
+  const { data: expData } = await supabaseClient.from('expenses').select('amount');
+  const totalExpenses = (expData||[]).reduce((s,e)=>s+e.amount,0);
+  const net = gross - totalExpenses;
+  document.getElementById('allTimeOrders').textContent = toFa(data.length);
+  document.getElementById('allTimeRevenue').textContent = toFa(income) + ' ت';
+  document.getElementById('allTimeGross').textContent = toFa(gross) + ' ت';
+  document.getElementById('allTimeNet').textContent = toFa(net) + ' ت';
 }
 async function saveSettings() {
   const updates = [

@@ -803,14 +803,49 @@ function renderDebtSearch() {
           <div><div class="text-xs font-bold" style="color:#E2554F">${toFa(remaining)}</div><div class="text-[9px]" style="color:#666">باقیمانده</div></div>
         </div>
         <div style="border-top:1px dashed #E5E5E5; padding-top:8px;">
-          ${creditOrders.map(o => `
-            <div class="flex justify-between text-[11px] py-1">
-              <span style="color:#666">سفارش #${toFa(o.id)} — ${new Date(o.created_at).toLocaleDateString('fa-IR')}</span>
-              <span>${toFa(o.total)} ت (${o.paid_amount>0 ? 'پرداخت‌شده: '+toFa(o.paid_amount) : 'پرداخت‌نشده'})</span>
-            </div>`).join('')}
+          ${creditOrders.map(o => {
+            const rem = o.total - (o.paid_amount||0);
+            return `
+            <div class="py-2" style="border-bottom:1px dashed #E5E5E5">
+              <div class="flex justify-between text-[11px] mb-1.5">
+                <span style="color:#666">سفارش #${toFa(o.id)} — ${new Date(o.created_at).toLocaleDateString('fa-IR')}</span>
+                <span>${toFa(o.total)} ت (${o.paid_amount>0 ? 'پرداخت‌شده: '+toFa(o.paid_amount) : 'پرداخت‌نشده'})</span>
+              </div>
+              ${rem > 0 ? `
+              <div class="flex items-center gap-2">
+                <input type="number" placeholder="مبلغ دریافتی الان" class="debt-pay-input inp flex-1" data-orderid="${o.id}" data-paid="${o.paid_amount||0}" data-total="${o.total}" style="padding:5px 8px;">
+                <button class="pay-partial-btn px-3 py-1.5 rounded-lg text-[10px] font-bold text-white" style="background:#8A9992" data-orderid="${o.id}">ثبت پرداخت</button>
+                <button class="pay-full-btn px-3 py-1.5 rounded-lg text-[10px] font-bold text-white" style="background:#2DC653" data-orderid="${o.id}" data-total="${o.total}">کاملاً حساب کرد</button>
+              </div>` : `<div class="text-[10px] font-bold" style="color:#2DC653">✓ کامل تسویه شده</div>`}
+            </div>`;
+          }).join('')}
         </div>
       </div>`;
   }).join('');
+
+  document.querySelectorAll('.pay-partial-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const input = document.querySelector(`.debt-pay-input[data-orderid="${btn.dataset.orderid}"]`);
+      const amount = Number(input.value);
+      if (!amount || amount <= 0) { alert('یه مبلغ درست وارد کن'); return; }
+      const currentPaid = Number(input.dataset.paid);
+      const total = Number(input.dataset.total);
+      const newPaid = Math.min(total, currentPaid + amount);
+      const { error } = await supabaseClient.from('orders').update({ paid_amount: newPaid }).eq('id', btn.dataset.orderid);
+      if (error) { alert('خطا در ثبت پرداخت'); console.error(error); return; }
+      await loadOrders();
+      renderDebtSearch();
+    });
+  });
+  document.querySelectorAll('.pay-full-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('این سفارش کاملاً تسویه‌شده ثبت بشه؟')) return;
+      const { error } = await supabaseClient.from('orders').update({ paid_amount: Number(btn.dataset.total) }).eq('id', btn.dataset.orderid);
+      if (error) { alert('خطا'); console.error(error); return; }
+      await loadOrders();
+      renderDebtSearch();
+    });
+  });
 }
 function printOrders() {
   let list = allOrders;
